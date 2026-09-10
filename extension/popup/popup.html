@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>COER Retro OS</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-window">
+    <!-- Window Bar -->
+    <div class="window-bar">
+      <div class="window-title">
+        <span class="badge-logo">COER-OS</span>
+        <span>PORTAL HUD</span>
+      </div>
+      <div class="window-dots">
+        <span class="dot gold"></span>
+        <span class="dot emerald"></span>
+      </div>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div class="status-banner">
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span id="sync-status-text">STATUS: SYNCED</span>
+      </div>
+      <div id="student-tag" style="font-size:10px; color:var(--accent-gold); font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">--</div>
+    </div>
+
+    <!-- Main Body -->
+    <div class="popup-body">
+      <!-- Attendance Quick Card -->
+      <div class="mini-card" id="card-attendance">
+        <div class="mini-card-header">
+          <span>📊 ATTENDANCE SUMMARY</span>
+          <span class="mini-badge safe" id="att-badge">--%</span>
+        </div>
+        <div class="att-row">
+          <div class="att-num-box">
+            <span class="att-pct" id="att-pct-val">--%</span>
+            <span class="att-label">OVERALL</span>
+          </div>
+          <div class="att-stats">
+            <div>Delivered: <strong id="att-total-lec">--</strong></div>
+            <div>Attended: <strong style="color:var(--accent-emerald)" id="att-pres-lec">--</strong></div>
+            <div id="att-target-text" style="color:var(--accent-gold); font-size:10px;">Req: --</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timetable Quick Card -->
+      <div class="mini-card" id="card-timetable">
+        <div class="mini-card-header">
+          <span>📅 TODAY'S SCHEDULE</span>
+          <span class="mini-badge info" id="today-name-badge">TODAY</span>
+        </div>
+        <div class="timetable-preview">
+          <div class="tt-row">
+            <span class="tt-tag now">NOW:</span>
+            <span class="tt-val" id="tt-now-val">Checking schedule...</span>
+          </div>
+          <div class="tt-row">
+            <span class="tt-tag next">NEXT:</span>
+            <span class="tt-val" id="tt-next-val">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority Assignments Card -->
+      <div class="mini-card" id="card-assignments">
+        <div class="mini-card-header">
+          <span>📁 PRIORITY ASSIGNMENTS</span>
+          <span class="mini-badge warning" id="asg-count-badge">-- DUE</span>
+        </div>
+        <div class="assignments-mini-list" id="asg-mini-list">
+          <div class="asg-empty">No urgent deadlines pending.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div class="popup-footer">
+      <button class="retro-btn retro-btn-gold" id="btn-sync-now">⚡ SYNC</button>
+      <button class="retro-btn retro-btn-cyan" id="btn-open-erp">🖥 OPEN ERP</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
