@@ -1,7 +1,7 @@
 # ⚡ COER Retro OS — Modern ERP Suite
 
 [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
-[![Version](https://img.shields.io/badge/Version-v1.1.0-06b6d4?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/Version-v1.2.0-06b6d4?style=for-the-badge)](#)
 [![Technical Analysis](https://img.shields.io/badge/ERP_Impact-Engineering_Report-10b981?style=for-the-badge)](./ANALYSIS.md)
 [![Design System](https://img.shields.io/badge/Theme-Retro_Dark_Neo--Brutalist-a855f7?style=for-the-badge)](#-design-system)
 [![Privacy First](https://img.shields.io/badge/Privacy-100%25_On--Device-10b981?style=for-the-badge)](#-privacy--security)
@@ -53,6 +53,12 @@
 
 ---
 
+### 7. 24/7 Session Keep-Alive Heartbeat & HUD
+*Continuous background sliding-window heartbeat preventing untimely ERP logouts and eliminating annoying CAPTCHA prompts throughout the day, complete with real-time pulse feedback in both Popup and In-Page Overlay.*
+![Session Keep-Alive Heartbeat](assets/screenshots/07_session_keepalive.png)
+
+---
+
 ## 🌟 Core Capabilities
 
 ### 📊 1. Attendance Intelligence Module
@@ -85,6 +91,13 @@
 - **Automated 10-Minute Phone Alerts:** Every lecture includes `VALARM` triggers (`TRIGGER:-PT10M`) ensuring Google Calendar pushes automatic notifications to the student's mobile phone and university email before every class starts.
 - **Semester Recurrence Rules:** Generates recurring weekly events (`RRULE:FREQ=WEEKLY;BYDAY=...`) automatically bounded by the academic semester end date.
 - **1-Click Google Calendar Import:** Direct link to Google Calendar's import interface for 2-click desktop or mobile synchronization.
+
+### 💓 7. 24/7 Session Keep-Alive Heartbeat (Anti-Logout Shield)
+- **Sliding-Window Timeout Shield:** Reverse-engineers Microsoft IIS / ASP.NET MVC's sliding session expiration by automatically pinging `/Account/GetStudentDetail` every 5 minutes in the background, continuously resetting the 20-minute server timer.
+- **Zero-CAPTCHA Workflow:** Keeps student sessions alive indefinitely across browser usage so they never get abruptly kicked out to the login page or forced to solve CAPTCHAs during study sessions.
+- **Persistent MV3 Alarms:** Leverages `chrome.alarms` and `chrome.runtime.onStartup` to guarantee alarm health across browser reboots without battery or memory drain.
+- **Live Pulse Feedback:** Features a visual retro heartbeat indicator (`💓 SESSION: ALIVE (5m) • Pulse #X`) on both Popup HUD and In-Page Overlay, with tactile click-to-pulse testing.
+- **Assisted Login Autofocus:** Automatically detects browser-autofilled credentials on the login screen and shifts cursor focus instantly to the CAPTCHA entry box for frictionless 3-second logins.
 
 ---
 

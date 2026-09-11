@@ -125,6 +125,18 @@ To model the real-world impact accurately, consider a conservative cohort of **1
 * **Impact:** 
   Migrates schedule tracking entirely to Google Calendar / Apple Calendar, eliminating recurrent timetable requests to the university ERP server.
 
+### 4.5 Continuous Session Keep-Alive Heartbeat (Anti-Logout Shield)
+* **The Legacy Problem:** 
+  Microsoft IIS / ASP.NET MVC utilizes an in-process session state with a default 20-minute sliding expiration window. If a student leaves their browser tab idle or works in another window for 20 minutes, their server-side session is invalidated. Navigating back to any ERP page immediately triggers a 302 redirect to the login screen (`/Account/Login`), requiring the student to re-enter credentials and solve another server-rendered CAPTCHA.
+* **The Extension Solution:** 
+  Uses Chrome's Manifest V3 background alarm infrastructure (`chrome.alarms`) combined with `chrome.runtime.onStartup` to dispatch a periodic 5-minute heartbeat (`touchSession()`) targeting `POST /Account/GetStudentDetail`.
+* **Resource Cost & Payload:**
+  - **Payload Size:** `<480 bytes` (empty POST body, returning tiny JSON student record).
+  - **Execution Latency:** `~55ms – 80ms`.
+  - **Bandwidth Consumption:** Only `~5.7 KB per hour` of active browser usage.
+* **Impact on Server Infrastructure:**
+  Unlike heavy full-page reloads (~1.6 MB), this micro-heartbeat consumes virtually negligible CPU and thread resources while completely eliminating the resource-heavy login postback cycle and dynamic server-side CAPTCHA image generation (`/Account/showrefreshcaptchaImage`).
+
 ---
 
 ## 5. Comprehensive Pros & Cons (Balanced Assessment)

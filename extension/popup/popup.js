@@ -77,12 +77,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.stopPropagation();
     handleCalendarExport(false);
   });
+
+  // Wire manual Heartbeat pulse on clicking heartbeat bar
+  const hbBar = document.getElementById('heartbeat-bar');
+  if (hbBar) {
+    hbBar.addEventListener('click', () => {
+      const hbBadge = document.getElementById('hb-badge');
+      const hbTime = document.getElementById('hb-time');
+      if (hbBadge) hbBadge.textContent = 'PULSING...';
+      if (hbTime) hbTime.textContent = 'Touching ERP session...';
+
+      chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' }, async () => {
+        await loadAndRenderData();
+      });
+    });
+  }
 });
 
 async function loadAndRenderData() {
   const data = await chrome.storage.local.get([
     'regId', 'studentName', 'stuId', 'syncStatus',
-    'attendanceData', 'assignmentData', 'timetableData', 'lastSync'
+    'attendanceData', 'assignmentData', 'timetableData', 'lastSync',
+    'sessionStatus', 'lastHeartbeat', 'heartbeatCount'
   ]);
 
   // 1. Render Student Identity & Connection Status
@@ -98,6 +114,46 @@ async function loadAndRenderData() {
   } else {
     if (studentTag) studentTag.textContent = 'AWAITING LOGIN';
     if (syncStatusText) syncStatusText.textContent = 'STATUS: LOGIN REQUIRED';
+  }
+
+  // Render Session Keep-Alive Heartbeat Status
+  const hbBadge = document.getElementById('hb-badge');
+  const hbTime = document.getElementById('hb-time');
+  const hbIcon = document.getElementById('hb-icon');
+
+  if (data.sessionStatus === 'active') {
+    if (hbBadge) {
+      hbBadge.textContent = 'ALIVE (5m)';
+      hbBadge.className = 'hb-badge active';
+    }
+    if (hbIcon) hbIcon.textContent = '💓';
+    if (hbTime) {
+      if (data.lastHeartbeat) {
+        const diffSec = Math.max(0, Math.round((Date.now() - new Date(data.lastHeartbeat).getTime()) / 1000));
+        let timeStr = 'Just now';
+        if (diffSec >= 60) {
+          timeStr = `${Math.floor(diffSec / 60)}m ago`;
+        }
+        const pulseInfo = data.heartbeatCount ? ` #${data.heartbeatCount}` : '';
+        hbTime.textContent = `Pulse${pulseInfo}: ${timeStr}`;
+      } else {
+        hbTime.textContent = 'Pulse: OK';
+      }
+    }
+  } else if (data.sessionStatus === 'needs_login' || !data.regId) {
+    if (hbBadge) {
+      hbBadge.textContent = 'LOGIN REQ';
+      hbBadge.className = 'hb-badge needs-login';
+    }
+    if (hbIcon) hbIcon.textContent = '🔒';
+    if (hbTime) hbTime.textContent = 'Awaiting login';
+  } else {
+    if (hbBadge) {
+      hbBadge.textContent = 'EXPIRED';
+      hbBadge.className = 'hb-badge expired';
+    }
+    if (hbIcon) hbIcon.textContent = '⚠️';
+    if (hbTime) hbTime.textContent = 'Session timed out';
   }
 
   // 2. Render Login Required fallback if not authenticated

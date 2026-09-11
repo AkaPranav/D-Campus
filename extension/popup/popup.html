@@ -28,6 +28,18 @@
       <div id="student-tag" style="font-size:10px; color:var(--accent-gold); font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">--</div>
     </div>
 
+    <!-- Keep-Alive Heartbeat Banner -->
+    <div class="heartbeat-bar" id="heartbeat-bar" title="Auto-refreshes ERP session every 5 minutes in background to prevent logout & CAPTCHA re-prompts">
+      <div class="hb-left">
+        <span class="hb-pulse-heart" id="hb-icon">💓</span>
+        <span class="hb-title">SESSION:</span>
+        <span class="hb-badge active" id="hb-badge">ACTIVE (5m)</span>
+      </div>
+      <div class="hb-right" id="hb-detail">
+        <span id="hb-time">Pulse: OK</span>
+      </div>
+    </div>
+
     <!-- Main Body -->
     <div class="popup-body">
       <!-- Attendance Quick Card -->

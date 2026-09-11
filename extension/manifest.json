@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "COER Retro OS - Modern ERP Suite",
-  "version": "1.1.0",
-  "description": "Unified retro-dark dashboard syncing Attendance, Priority Assignments, and Timetable with one-click safe actions.",
+  "version": "1.2.0",
+  "description": "Unified retro-dark dashboard syncing Attendance, Priority Assignments, Timetable Calendar, and continuous Keep-Alive Heartbeat.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

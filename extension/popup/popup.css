@@ -110,6 +110,75 @@ body {
   box-shadow: 0 0 6px var(--accent-emerald);
 }
 
+.heartbeat-bar {
+  background: #0e1219;
+  border-bottom: 1.5px solid var(--border-base);
+  padding: 5px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.heartbeat-bar:hover {
+  background: #151b24;
+}
+
+.hb-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hb-pulse-heart {
+  display: inline-block;
+  font-size: 11px;
+  animation: pulseHeart 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseHeart {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.8; }
+}
+
+.hb-title {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.hb-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+
+.hb-badge.active {
+  color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.hb-badge.expired {
+  color: var(--accent-rose);
+  background: rgba(244, 63, 94, 0.15);
+}
+
+.hb-badge.needs-login {
+  color: var(--accent-gold);
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.hb-right {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
 .popup-body {
   padding: 12px;
   display: flex;

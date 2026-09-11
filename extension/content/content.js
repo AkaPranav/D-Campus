@@ -37,6 +37,8 @@
     stuId: null,
     studentName: null,
     syncStatus: 'idle',
+    sessionStatus: 'idle',
+    lastHeartbeat: null,
     lastSync: null
   };
 
@@ -91,7 +93,10 @@
           <span class="ticker-item" id="ticker-next-class">NEXT CLASS: <strong>--</strong></span>
           <span class="ticker-item highlight" id="ticker-assignments">DUE ASSIGNMENTS: <strong>--</strong></span>
         </div>
-        <div style="color: var(--text-muted);" id="ticker-last-sync">SYNC: IDLE</div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span id="ticker-heartbeat" style="color:var(--accent-emerald); font-size:11px; font-weight:700; cursor:pointer;" title="Continuous Keep-Alive Heartbeat: Resets 20-min IIS session timeout every 5 minutes in background">💓 KEEP-ALIVE: ACTIVE (5m)</span>
+          <span style="color: var(--text-muted);" id="ticker-last-sync">SYNC: IDLE</span>
+        </div>
       </div>
 
       <!-- Navigation Tabs -->
@@ -241,6 +246,20 @@
     triggerSync();
   });
 
+  // Ticker Heartbeat manual pulse
+  const tickerHb = shadow.getElementById('ticker-heartbeat');
+  if (tickerHb) {
+    tickerHb.addEventListener('click', () => {
+      tickerHb.innerHTML = '💓 KEEP-ALIVE: <strong style="color:var(--accent-gold)">PULSING...</strong>';
+      chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' }, (res) => {
+        if (res && res.success) {
+          showToast(`Session touched! Pulse #${res.heartbeatCount || 1} kept alive.`, 'success');
+        }
+        loadCachedDataAndRender();
+      });
+    });
+  }
+
   function toggleOverlay() {
     if (backdrop.classList.contains('active')) {
       closeOverlay();
@@ -330,11 +349,14 @@
       const stored = await chrome.storage.local.get([
         'regId', 'studentName', 'stuId',
         'attendanceData', 'assignmentData', 'timetableData',
-        'rawTimetableRows', 'selectedElectives', 'lastSync'
+        'rawTimetableRows', 'selectedElectives', 'lastSync',
+        'sessionStatus', 'lastHeartbeat'
       ]);
       if (stored.regId) appState.regId = stored.regId;
       if (stored.studentName) appState.studentName = stored.studentName;
       if (stored.stuId) appState.stuId = stored.stuId;
+      if (stored.sessionStatus) appState.sessionStatus = stored.sessionStatus;
+      if (stored.lastHeartbeat) appState.lastHeartbeat = stored.lastHeartbeat;
       if (stored.attendanceData) appState.attendanceData = stored.attendanceData;
       if (stored.assignmentData) appState.assignmentData = stored.assignmentData;
       if (stored.selectedElectives) appState.selectedElectives = stored.selectedElectives;
@@ -612,6 +634,21 @@
       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const syncEl = shadow.getElementById('ticker-last-sync');
       if (syncEl) syncEl.textContent = `LAST SYNC: ${timeStr}`;
+    }
+
+    // 5. Session Keep-Alive Heartbeat Status
+    const hbEl = shadow.getElementById('ticker-heartbeat');
+    if (hbEl) {
+      if (appState.sessionStatus === 'active') {
+        hbEl.innerHTML = '💓 KEEP-ALIVE: <strong style="color:var(--accent-emerald)">ACTIVE (5m)</strong>';
+        hbEl.title = 'Keep-Alive Heartbeat: Active. Background pulse resets 20-min session timeout every 5 minutes.';
+      } else if (appState.sessionStatus === 'needs_login' || !appState.regId) {
+        hbEl.innerHTML = '🔒 SESSION: <strong style="color:var(--accent-gold)">LOGIN REQ</strong>';
+        hbEl.title = 'Please log in to your ERP account to activate session keep-alive.';
+      } else {
+        hbEl.innerHTML = '⚠️ SESSION: <strong style="color:var(--accent-rose)">EXPIRED</strong>';
+        hbEl.title = 'Session timed out. Re-authentication required.';
+      }
     }
   }
 
@@ -1911,17 +1948,27 @@
   async function checkAndSyncStudentSession() {
     const path = window.location.pathname.toLowerCase();
     
-    // Login page helper: autofocus cursor intelligently
+    // Login page helper: autofocus cursor intelligently & assist autofill
     if (path === '/' || path.includes('/account/login')) {
-      const userInp = document.getElementById('UserName');
-      const passInp = document.getElementById('Password');
-      const capInp = document.getElementById('captcha');
-      if (userInp && passInp && capInp) {
-        if (userInp.value && passInp.value && !capInp.value) {
-          capInp.focus();
-        } else if (!userInp.value) {
-          userInp.focus();
+      const focusCaptchaIfReady = () => {
+        const userInp = document.getElementById('UserName');
+        const passInp = document.getElementById('Password');
+        const capInp = document.getElementById('captcha');
+        if (userInp && passInp && capInp) {
+          if (userInp.value && passInp.value && !capInp.value) {
+            capInp.focus();
+            return true;
+          } else if (!userInp.value) {
+            userInp.focus();
+          }
         }
+        return false;
+      };
+
+      if (!focusCaptchaIfReady()) {
+        setTimeout(focusCaptchaIfReady, 300);
+        setTimeout(focusCaptchaIfReady, 800);
+        setTimeout(focusCaptchaIfReady, 1500);
       }
       return;
     }
@@ -1930,6 +1977,9 @@
     const student = detectStudentContext();
     if (student.regId) {
       console.log('[COER OS] Active student session detected:', student);
+      // Immediately trigger heartbeat pulse to keep ERP session alive
+      chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' });
+
       const stored = await chrome.storage.local.get(['regId', 'studentName', 'stuId', 'lastSync']);
       
       const isNewStudent = !stored.regId || stored.regId !== student.regId || !stored.studentName || !stored.stuId;
@@ -1952,6 +2002,17 @@
       }
     }
   }
+
+  // Refresh keep-alive pulse when user returns to an ERP tab
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' }, (res) => {
+        if (res && res.success) {
+          loadCachedDataAndRender();
+        }
+      });
+    }
+  });
 
   // Auto-initialize cached storage and check student session on script run
   loadCachedDataAndRender();

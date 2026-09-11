@@ -6,35 +6,161 @@
 
 // Dynamic per-student registration ID (resolved at runtime from authenticated session)
 
-// 1. Extension Lifecycle & Alarms
+// Alarm & Heartbeat Constants
+const ALARM_SESSION_HEARTBEAT = 'COER_SESSION_HEARTBEAT';
+const ALARM_PERIODIC_SYNC = 'COER_PERIODIC_SYNC';
+const HEARTBEAT_INTERVAL_MINUTES = 5; // Resets IIS ASP.NET 20-min sliding expiration window
+const SYNC_INTERVAL_MINUTES = 15;
+
+/**
+ * Ensures required periodic alarms are registered with Chrome.
+ */
+async function setupAlarms() {
+  const alarms = await chrome.alarms.getAll();
+  const names = alarms.map(a => a.name);
+
+  // 1. Keep-Alive Heartbeat (every 5 minutes)
+  if (!names.includes(ALARM_SESSION_HEARTBEAT)) {
+    await chrome.alarms.create(ALARM_SESSION_HEARTBEAT, {
+      periodInMinutes: HEARTBEAT_INTERVAL_MINUTES,
+      delayInMinutes: 0.2 // Initial pulse in ~12 seconds
+    });
+    console.log(`[COER OS] Registered ${ALARM_SESSION_HEARTBEAT} alarm (every ${HEARTBEAT_INTERVAL_MINUTES} min).`);
+  }
+
+  // 2. Periodic Data Synchronization (every 15 minutes)
+  if (!names.includes(ALARM_PERIODIC_SYNC)) {
+    await chrome.alarms.create(ALARM_PERIODIC_SYNC, {
+      periodInMinutes: SYNC_INTERVAL_MINUTES,
+      delayInMinutes: 1
+    });
+    console.log(`[COER OS] Registered ${ALARM_PERIODIC_SYNC} alarm (every ${SYNC_INTERVAL_MINUTES} min).`);
+  }
+}
+
+/**
+ * Pings ERP session via /Account/GetStudentDetail with authenticated session cookies.
+ * Resets the 20-minute sliding expiration window in IIS / ASP.NET MVC so the student
+ * stays logged in continuously throughout the day without CAPTCHA re-prompts.
+ */
+async function touchSession() {
+  const timestamp = new Date().toISOString();
+  console.log(`[COER OS] 💓 Heartbeat pulse triggered at ${new Date().toLocaleTimeString()}...`);
+
+  try {
+    const res = await fetch('https://erp.coeruniversity.in/Account/GetStudentDetail', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: ''
+    });
+
+    if (!res.ok) {
+      console.warn(`[COER OS] Heartbeat pulse returned HTTP ${res.status}`);
+      await chrome.storage.local.set({
+        sessionStatus: 'error',
+        lastHeartbeat: timestamp,
+        lastHeartbeatSuccess: false
+      });
+      return { success: false, status: res.status };
+    }
+
+    const json = await res.json();
+    const list = JSON.parse(json.state || '[]');
+
+    if (list.length > 0) {
+      const s = list[0];
+      const regId = String(s.RegID);
+      const studentName = (s.StudentName || '').replace(/\s+/g, ' ').trim();
+      const stuId = (s.StudentID || '').trim();
+
+      const current = await chrome.storage.local.get(['heartbeatCount']);
+      const nextCount = (current.heartbeatCount || 0) + 1;
+
+      await chrome.storage.local.set({
+        sessionStatus: 'active',
+        lastHeartbeat: timestamp,
+        lastHeartbeatSuccess: true,
+        heartbeatCount: nextCount,
+        regId,
+        studentName,
+        stuId,
+        course: (s.Course || '').trim(),
+        yearSem: (s.YearSem || '').trim(),
+        branch: (s.Branch || '').trim(),
+        section: (s.Section || '').trim()
+      });
+
+      console.log(`[COER OS] 💓 Session kept alive for ${studentName} (${stuId}). Pulse #${nextCount}`);
+      return {
+        success: true,
+        sessionStatus: 'active',
+        studentName,
+        stuId,
+        regId,
+        timestamp,
+        heartbeatCount: nextCount
+      };
+    } else {
+      console.log('[COER OS] Heartbeat: No active student session (logged out / awaiting login).');
+      await chrome.storage.local.set({
+        sessionStatus: 'needs_login',
+        lastHeartbeat: timestamp,
+        lastHeartbeatSuccess: false
+      });
+      return { success: false, sessionStatus: 'needs_login' };
+    }
+  } catch (err) {
+    console.warn('[COER OS] Heartbeat network/offline exception:', err.message);
+    await chrome.storage.local.set({
+      sessionStatus: 'offline',
+      lastHeartbeat: timestamp,
+      lastHeartbeatSuccess: false,
+      heartbeatError: err.message
+    });
+    return { success: false, error: err.message };
+  }
+}
+
+// 1. Extension Lifecycle: onInstalled & onStartup
 chrome.runtime.onInstalled.addListener(async () => {
-  console.log('[COER OS] Service Worker installed.');
-  
-  // Set up periodic sync alarm (every 15 minutes)
-  await chrome.alarms.create('COER_PERIODIC_SYNC', {
-    periodInMinutes: 15
-  });
-  
-  // Initialize storage defaults if not already present
-  const data = await chrome.storage.local.get(['regId', 'attendanceData', 'assignmentData', 'timetableData']);
+  console.log('[COER OS] Service Worker installed/updated.');
+  await setupAlarms();
+
+  const data = await chrome.storage.local.get(['regId']);
   if (!data.regId) {
     await chrome.storage.local.set({
       lastSync: null,
-      syncStatus: 'needs_login'
+      syncStatus: 'needs_login',
+      sessionStatus: 'needs_login'
     });
   } else {
-    // Initial background sync if already authenticated
+    // Immediate heartbeat pulse and sync if already authenticated
+    await touchSession();
     try {
       await syncAllData();
     } catch (e) {
-      console.warn('[COER OS] Initial sync skipped (awaiting session):', e);
+      console.warn('[COER OS] Initial sync skipped:', e);
     }
+  }
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('[COER OS] Browser startup: verifying alarms & refreshing ERP session...');
+  await setupAlarms();
+  try {
+    await touchSession();
+  } catch (e) {
+    console.warn('[COER OS] Startup session touch error:', e);
   }
 });
 
 // 2. Alarm Listener
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'COER_PERIODIC_SYNC') {
+  if (alarm.name === ALARM_SESSION_HEARTBEAT) {
+    console.log('[COER OS] 💓 Session keep-alive alarm triggered...');
+    await touchSession();
+  } else if (alarm.name === ALARM_PERIODIC_SYNC) {
     console.log('[COER OS] Scheduled background sync firing...');
     try {
       await syncAllData();
@@ -46,6 +172,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // 3. Runtime Message Router
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'TRIGGER_HEARTBEAT') {
+    (async () => {
+      try {
+        const result = await touchSession();
+        sendResponse(result);
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
   if (message.type === 'SYNC_STUDENT_IDENTITY') {
     (async () => {
       try {
@@ -206,6 +344,11 @@ async function syncAllData(customRegId) {
           branch: (s.Branch || '').trim(),
           section: (s.Section || '').trim()
         };
+        await chrome.storage.local.set({
+          sessionStatus: 'active',
+          lastHeartbeat: new Date().toISOString(),
+          lastHeartbeatSuccess: true
+        });
       }
     }
   } catch (e) {
