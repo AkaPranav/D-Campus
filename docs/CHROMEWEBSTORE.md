@@ -1,16 +1,16 @@
 # Chrome Web Store Listing & Metadata: COER Retro OS
 
 **Extension Name:** COER Retro OS - Modern ERP Suite  
-**Version:** 1.0.0  
+**Version:** 1.2.0  
 **Target Browser:** Google Chrome (Manifest V3)  
-**Last Updated:** September 10, 2026  
+**Last Updated:** September 11, 2026  
 
 ---
 
 ## 1. Store Metadata
 
 ### Short Description (Max 132 chars)
-Unified retro-dark dashboard syncing Attendance, Priority Assignments, and Timetable with one-click safe actions.
+Unified retro-dark dashboard syncing Attendance, Priority Assignments, Timetable, G-Cal export, and 24/7 keep-alive heartbeat.
 
 ### Detailed Description
 Transform your COER University ERP student portal experience with **COER Retro OS** — a high-contrast, cyberpunk retro-dark augmentation suite designed to eliminate clunky navigation, bypass repetitive forms, and keep your academic life in sync.
@@ -18,7 +18,7 @@ Transform your COER University ERP student portal experience with **COER Retro O
 #### 🌟 Key Modules & Capabilities:
 1. **Real-time Attendance Dashboard:**
    - Instant KPI radial gauge displaying overall attendance percentage with safe (≥75%) and danger (<75%) threshold alerts.
-   - Exact lecture metrics: Total Delivered, Attended, Absent, and the precise number of classes required to hit the 75% exam eligibility barrier.
+   - Exact lecture metrics: Total Delivered, Attended, Absent, classes needed to reach 75% (`3T - 4P`), or safe bunk allowance (`floor((4P - 3T) / 3)`).
    - Comprehensive subject-wise breakdown with fractional attendance counts and instant search filters.
 
 2. **Priority Assignment & Study Material Hub:**
@@ -38,6 +38,14 @@ Transform your COER University ERP student portal experience with **COER Retro O
    - Injects a tactile control bar directly onto compulsory feedback lockout pages.
    - Batch-rate all 14 faculty rows in a single click (All Xlnt, All Good, All Avg, All Poor) and submit immediately to unlock your attendance summary.
 
+5. **Google Calendar / iCal (.ics) Timetable Sync:**
+   - One-click exporter producing RFC 5545 standard `.ics` calendar files with embedded `Asia/Kolkata` timezone and automated 10-minute phone/email alerts before each lecture.
+   - Directly imports into Google Calendar, Apple Calendar, and Microsoft Outlook.
+
+6. **24/7 Session Keep-Alive Heartbeat:**
+   - Background sliding-window heartbeat pinging the server every 5 minutes, preventing unwanted portal timeouts and eliminating repetitive CAPTCHA prompts throughout the study day.
+   - Live pulse feedback badge in Popup HUD and In-Page Overlay with tactile click-to-pulse verification.
+
 ---
 
 ## 2. Permissions Justification
@@ -45,9 +53,9 @@ Transform your COER University ERP student portal experience with **COER Retro O
 | Permission | Justification |
 | :--- | :--- |
 | `storage` | Required to cache normalized attendance, assignments, and timetable data locally on device for instant offline availability and faster dashboard rendering. |
-| `alarms` | Required to schedule periodic 15-minute background sync jobs that check for updated attendance records and upcoming assignment deadlines. |
+| `alarms` | Required to schedule periodic 15-minute background sync jobs and the 5-minute session keep-alive heartbeat. |
 | `tabs` | Required to switch focus to existing COER ERP tabs or open the portal directly from the toolbar popup action button. |
-| `host_permissions` (`https://erp.coeruniversity.in/*`) | Required to make authenticated API requests to COER ERP endpoints (`GetSubjectDetailStudentAcademicFromLive`, `GetStudentAssignment`, `FillStudentTimeTable`, `GetAssignmentImage`, `UploadStudentAssignment`) using native session cookies. |
+| `host_permissions` (`https://erp.coeruniversity.in/*`) | Required to make authenticated API requests to COER ERP endpoints (`GetSubjectDetailStudentAcademicFromLive`, `GetStudentAssignment`, `FillStudentTimeTable`, `GetAssignmentImage`, `UploadStudentAssignment`, `GetStudentDetail`) using native session cookies. |
 
 ---
 
@@ -62,18 +70,21 @@ Transform your COER University ERP student portal experience with **COER Retro O
 
 ## 4. Submission Package & Assets
 
-- **ZIP Package:** `coer-retro-os-webstore-v1.0.0.zip` (38 KB, `manifest.json` at archive root).
+- **ZIP Package:** `dist/coer-retro-os-webstore-v1.2.0.zip` (48 KB, `manifest.json` at archive root).
 - **Store Icon:** `extension/icons/icon-128.png` (128×128 PNG).
 - **Screenshots (1280×800):**
-  - `store-assets/screenshots/01_attendance_gauge.png`
-  - `store-assets/screenshots/02_active_assignments.png`
-  - `store-assets/screenshots/03_study_materials.png`
-  - `store-assets/screenshots/04_timetable_electives.png`
-  - `store-assets/screenshots/05_submission_safety_shield.png`
-- **Small Promo Tile (440×280):** `store-assets/promo-small-440x280.png`.
+  - `assets/screenshots/01_attendance_gauge.png`
+  - `assets/screenshots/02_active_assignments.png`
+  - `assets/screenshots/03_study_materials.png`
+  - `assets/screenshots/04_timetable_electives.png`
+  - `assets/screenshots/05_submission_safety_shield.png`
+  - `assets/screenshots/06_calendar_sync_modal.png`
+  - `assets/screenshots/07_session_keepalive.png`
 
 ---
 
 ## 5. Version History
 
+- **v1.2.0 (2026-09-11):** 24/7 Session Keep-Alive Heartbeat engine preventing IIS session timeouts, live heartbeat pulse indicator, Google Calendar (.ics) export modal with 10-minute alerts, dynamic safe bunk allowance calculator for attendance ≥ 75%, and login page autofocus helper.
+- **v1.1.0 (2026-09-11):** Mon–Fri timetable refinement, in-card multi-track elective selector with auto-matching, room inference removal, and active assignments priority sorting.
 - **v1.0.0 (2026-09-10):** Initial Manifest V3 release. Modular architecture featuring Shadow DOM overlay, retro-dark neo-brutalist styling, 3-module dashboard (Attendance, Assignments, Timetable), dynamic multi-elective selector, safety submission shield, and popup toolbar preview.
