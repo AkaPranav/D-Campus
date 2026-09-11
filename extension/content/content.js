@@ -1130,9 +1130,12 @@
       </div>
     `;
 
-    // 2. Day Selector Tabs (Monday - Friday)
+    // 2. Day Selector Tabs (Monday - Friday) & Calendar Sync Action
     const dayBar = document.createElement('div');
     dayBar.className = 'day-selector-bar';
+
+    const dayButtonsGroup = document.createElement('div');
+    dayButtonsGroup.className = 'day-buttons-group';
 
     days.forEach(day => {
       const btn = document.createElement('button');
@@ -1143,8 +1146,18 @@
         appState.currentDay = day;
         renderCurrentView();
       });
-      dayBar.appendChild(btn);
+      dayButtonsGroup.appendChild(btn);
     });
+    dayBar.appendChild(dayButtonsGroup);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn-cal-export-trigger';
+    exportBtn.innerHTML = `<span>📅</span> SYNC TO GOOGLE CALENDAR (.ICS)`;
+    exportBtn.title = 'Export weekly class schedule to Google Calendar with automatic 10-minute alerts';
+    exportBtn.addEventListener('click', () => {
+      openCalendarExportModal();
+    });
+    dayBar.appendChild(exportBtn);
 
     // 3. Period Cards Grid (P1 - P7)
     const grid = document.createElement('div');
@@ -1453,6 +1466,152 @@
   function closeSafetyModal() {
     appState.activeSubmitAssignment = null;
     appState.selectedFile = null;
+    const modalContainer = shadow.getElementById('coer-safety-modal-container');
+    if (modalContainer) modalContainer.innerHTML = '';
+  }
+
+  // ----------------------------------------------------------------
+  // CALENDAR EXPORT TO GOOGLE CALENDAR (.ICS) MODAL
+  // ----------------------------------------------------------------
+  function openCalendarExportModal() {
+    const tt = appState.timetableData;
+    if (!tt || !window.CoerCalendar) {
+      showToast('Timetable data not loaded yet. Please wait for sync.', 'error');
+      return;
+    }
+
+    const totalScheduled = window.CoerCalendar.countScheduledClasses(tt);
+    const semEnd = window.CoerCalendar.getSemesterEndDate();
+    const studentName = appState.studentName || 'Student';
+    const studentId = appState.stuId || appState.regId || '';
+
+    const modalContainer = shadow.getElementById('coer-safety-modal-container');
+    modalContainer.innerHTML = `
+      <div id="coer-cal-modal-backdrop">
+        <div class="cal-modal-box">
+          <div class="cal-modal-header">
+            <div class="cal-modal-title">
+              <span>📅</span> SYNC TIMETABLE TO GOOGLE CALENDAR
+            </div>
+            <span class="retro-dot close" id="btn-close-cal-modal" title="Close"></span>
+          </div>
+
+          <div class="cal-modal-body">
+            <!-- Stats Bar -->
+            <div class="cal-stats-bar">
+              <div class="cal-stat-chip">
+                <div class="cal-stat-value">${totalScheduled} Classes</div>
+                <div class="cal-stat-label">WEEKLY LECTURES</div>
+              </div>
+              <div class="cal-stat-chip">
+                <div class="cal-stat-value">MON – FRI</div>
+                <div class="cal-stat-label">RECURRING SCHEDULE</div>
+              </div>
+              <div class="cal-stat-chip">
+                <div class="cal-stat-value" style="color:var(--accent-gold);">Until ${semEnd.month === 6 ? 'Jun 30' : 'Dec 31'}</div>
+                <div class="cal-stat-label">SEMESTER DURATION</div>
+              </div>
+            </div>
+
+            <!-- Reminder Notification Timing Option -->
+            <div class="cal-field-row">
+              <div class="cal-field-label">
+                <span>🔔</span> CLASS REMINDER NOTIFICATION:
+              </div>
+              <select id="cal-reminder-select" class="cal-select">
+                <option value="10" selected>10 Minutes Before (Recommended)</option>
+                <option value="15">15 Minutes Before</option>
+                <option value="5">5 Minutes Before</option>
+                <option value="30">30 Minutes Before</option>
+                <option value="0">No Notification (Silent)</option>
+              </select>
+            </div>
+
+            <!-- 3-Step Setup Instructions -->
+            <div class="cal-steps-box">
+              <div class="cal-step-row">
+                <div class="cal-step-num">1</div>
+                <div class="cal-step-content">
+                  <strong>Download Schedule File:</strong> Click <em>"Download .ics"</em> below to save your personalized COER timetable.
+                  <div class="cal-step-desc">Compatible with Google Calendar, Apple Calendar, Outlook & Android.</div>
+                </div>
+              </div>
+
+              <div class="cal-step-row">
+                <div class="cal-step-num">2</div>
+                <div class="cal-step-content">
+                  <strong>Import into Google Calendar:</strong> Click <em>"Open Google Calendar Import"</em> (or open Google Calendar settings).
+                  <div class="cal-step-desc">Drag & drop your downloaded .ics file into the Import box.</div>
+                </div>
+              </div>
+
+              <div class="cal-step-row">
+                <div class="cal-step-num">3</div>
+                <div class="cal-step-content">
+                  <strong>Automatic Phone & Email Alerts:</strong>
+                  <div class="cal-step-desc">Your entire semester's classes will instantly sync with phone push notifications before every lecture!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cal-modal-footer">
+            <button class="retro-btn retro-btn-ghost retro-btn-sm" id="btn-cancel-cal-modal">CANCEL</button>
+            <button class="retro-btn retro-btn-gold retro-btn-sm" id="btn-download-ics-only">
+              ⬇ DOWNLOAD .ICS
+            </button>
+            <button class="retro-btn retro-btn-emerald retro-btn-sm" id="btn-download-and-open-gcal">
+              🚀 DOWNLOAD & OPEN G-CAL
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const backdrop = modalContainer.querySelector('#coer-cal-modal-backdrop');
+    const closeBtn = modalContainer.querySelector('#btn-close-cal-modal');
+    const cancelBtn = modalContainer.querySelector('#btn-cancel-cal-modal');
+    const downloadOnlyBtn = modalContainer.querySelector('#btn-download-ics-only');
+    const downloadAndOpenBtn = modalContainer.querySelector('#btn-download-and-open-gcal');
+    const reminderSelect = modalContainer.querySelector('#cal-reminder-select');
+
+    function executeExport(openCalendarTab = false) {
+      const reminderMin = parseInt(reminderSelect.value, 10);
+      const cleanName = (studentName || 'COER').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `COER_Timetable_${cleanName}.ics`;
+
+      const res = window.CoerCalendar.generateIcs(tt, {
+        studentName,
+        studentId,
+        reminderMin
+      });
+
+      if (res.totalClasses === 0) {
+        showToast('No active scheduled classes found in timetable.', 'error');
+        return;
+      }
+
+      window.CoerCalendar.downloadIcsFile(res.icsText, filename);
+      showToast(`Downloaded ${res.totalClasses} classes (.ics)!`, 'success');
+
+      if (openCalendarTab) {
+        window.open(window.CoerCalendar.GOOGLE_CALENDAR_IMPORT_URL, '_blank');
+      }
+
+      closeCalendarExportModal();
+    }
+
+    closeBtn.addEventListener('click', closeCalendarExportModal);
+    cancelBtn.addEventListener('click', closeCalendarExportModal);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeCalendarExportModal();
+    });
+
+    downloadOnlyBtn.addEventListener('click', () => executeExport(false));
+    downloadAndOpenBtn.addEventListener('click', () => executeExport(true));
+  }
+
+  function closeCalendarExportModal() {
     const modalContainer = shadow.getElementById('coer-safety-modal-container');
     if (modalContainer) modalContainer.innerHTML = '';
   }

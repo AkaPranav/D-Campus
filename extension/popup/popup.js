@@ -33,6 +33,50 @@ document.addEventListener('DOMContentLoaded', async () => {
       await chrome.tabs.create({ url: erpUrl });
     }
   });
+
+  // Wire Calendar Export buttons
+  const calBtn = document.getElementById('btn-export-cal');
+  const calMiniBtn = document.getElementById('btn-export-cal-mini');
+
+  async function handleCalendarExport(openGoogleCal = true) {
+    const data = await chrome.storage.local.get(['timetableData', 'studentName', 'stuId', 'regId']);
+    if (!data.timetableData || !window.CoerCalendar) {
+      alert('Timetable data not found. Please log in or sync with ERP first.');
+      return;
+    }
+
+    const cleanName = (data.studentName || 'COER').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `COER_Timetable_${cleanName}.ics`;
+
+    const res = window.CoerCalendar.generateIcs(data.timetableData, {
+      studentName: data.studentName,
+      studentId: data.stuId || data.regId,
+      reminderMin: 10
+    });
+
+    if (res.totalClasses === 0) {
+      alert('No active scheduled classes found in timetable.');
+      return;
+    }
+
+    window.CoerCalendar.downloadIcsFile(res.icsText, filename);
+
+    const statusEl = document.getElementById('sync-status-text');
+    if (statusEl) {
+      statusEl.textContent = `EXPORTED ${res.totalClasses} CLASSES!`;
+      setTimeout(() => { statusEl.textContent = 'STATUS: SYNCED'; }, 4000);
+    }
+
+    if (openGoogleCal) {
+      chrome.tabs.create({ url: window.CoerCalendar.GOOGLE_CALENDAR_IMPORT_URL });
+    }
+  }
+
+  if (calBtn) calBtn.addEventListener('click', () => handleCalendarExport(true));
+  if (calMiniBtn) calMiniBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleCalendarExport(false);
+  });
 });
 
 async function loadAndRenderData() {

@@ -31,7 +31,7 @@
   "content_scripts": [
     {
       "matches": ["https://erp.coeruniversity.in/*"],
-      "js": ["content/content.js"],
+      "js": ["utils/calendar.js", "content/content.js"],
       "run_at": "document_idle"
     }
   ],

@@ -292,3 +292,21 @@ body {
 }
 .retro-btn-gold { background: var(--accent-gold); color: #000; }
 .retro-btn-cyan { background: var(--accent-cyan); color: #000; }
+.retro-btn-emerald { background: var(--accent-emerald); color: #000; }
+
+.mini-btn-link {
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mini-btn-link:hover {
+  background: var(--accent-gold);
+  color: #000;
+}

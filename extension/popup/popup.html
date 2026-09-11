@@ -53,7 +53,10 @@
       <div class="mini-card" id="card-timetable">
         <div class="mini-card-header">
           <span>📅 TODAY'S SCHEDULE</span>
-          <span class="mini-badge info" id="today-name-badge">TODAY</span>
+          <div style="display:flex; align-items:center; gap:5px;">
+            <button id="btn-export-cal-mini" class="mini-btn-link" title="Export schedule to Google Calendar (.ics)">📥 .ICS</button>
+            <span class="mini-badge info" id="today-name-badge">TODAY</span>
+          </div>
         </div>
         <div class="timetable-preview">
           <div class="tt-row">
@@ -82,10 +85,12 @@
     <!-- Footer Controls -->
     <div class="popup-footer">
       <button class="retro-btn retro-btn-gold" id="btn-sync-now">⚡ SYNC</button>
+      <button class="retro-btn retro-btn-emerald" id="btn-export-cal" title="Sync schedule to Google Calendar">📅 CALENDAR</button>
       <button class="retro-btn retro-btn-cyan" id="btn-open-erp">🖥 OPEN ERP</button>
     </div>
   </div>
 
+  <script src="../utils/calendar.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
