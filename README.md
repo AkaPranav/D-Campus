@@ -49,6 +49,7 @@
 
 ### 6. Google Calendar / iCal (.ics) Timetable Sync
 *One-click schedule exporter generating RFC 5545 compliant `.ics` calendar files with automatic 10-minute class alerts, embedded `Asia/Kolkata` timezone specifications, and 2-click synchronization with Google Calendar, Apple Calendar, and Outlook.*
+![Google Calendar Timetable Sync](assets/screenshots/06_calendar_sync_modal.png)
 
 ---
 
@@ -171,6 +172,6 @@ COER Retro OS adheres to a cohesive **Retro-Dark Neo-Brutalist** visual standard
 ---
 
 ## 📜 License & Disclaimer
-
-This project is open-source under the [MIT License](LICENSE).  
+ 
 *Disclaimer: COER Retro OS is an independent student project developed to augment usability. It is not officially affiliated with or endorsed by COER University.*
+
