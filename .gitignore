@@ -16,17 +16,20 @@ credentials
 *.py
 
 # ------------------------------------------------------------------------------
-# 3. Internal Documentation (Keep only README.md)
+# 3. Documentation (Track README.md, ANALYSIS.md, docs/*.md, scripts/README.md)
 # ------------------------------------------------------------------------------
 *.md
 !README.md
 !ANALYSIS.md
+!docs/*.md
+!scripts/README.md
 
 # ------------------------------------------------------------------------------
 # 4. Scraped Student ERP Data & Academic Downloads
 # ------------------------------------------------------------------------------
 /*.json
 /*.csv
+data/
 assignments_download/
 assignments_upload/
 
@@ -40,8 +43,10 @@ __pycache__/
 *.log
 
 # ------------------------------------------------------------------------------
-# 6. Local Chrome Binaries, Testing Profiles & Archives
+# 6. Local Chrome Binaries, Testing Profiles, Builds & Archives
 # ------------------------------------------------------------------------------
+bin/
+dist/
 chrome-linux64/
 chromedriver-linux64/
 .chrome_testing_profile/
@@ -68,6 +73,7 @@ coer_navigation_screenshot/
 # ------------------------------------------------------------------------------
 store-assets/
 *.sh
+!package_cws.sh
 
 # ------------------------------------------------------------------------------
 # 10. OS & Editor Artifacts
