@@ -99,6 +99,12 @@
 - **Live Pulse Feedback:** Features a visual retro heartbeat indicator (`💓 SESSION: ALIVE (5m) • Pulse #X`) on both Popup HUD and In-Page Overlay, with tactile click-to-pulse testing.
 - **Assisted Login Autofocus:** Automatically detects browser-autofilled credentials on the login screen and shifts cursor focus instantly to the CAPTCHA entry box for frictionless 3-second logins.
 
+### ☕ 8. "Buy me a Chai" Developer Support & Offline UPI Engine
+- **First-Time Install Greeting:** Greets new users on fresh installation with an optional welcome modal explaining project motivations and key features.
+- **Discrete & Unhighlighted Design:** Intentionally designed to avoid visual clutter — rests quietly as a subtle, dark tactile corner button in the full dashboard footer (`#btn-dashboard-corner-chai`) and bottom portal corner (`#coer-chai-corner-btn`) without distracting neon highlights or animations.
+- **Seamless In-Dashboard Modal:** Opens the contribution modal cleanly over the full dashboard without closing or resetting the active view.
+- **1-Click UPI & Offline QR Code:** Provides instant 1-click UPI copy (`6396950805@slc`) and toggleable offline QR code generated 100% on-device with zero external network requests.
+
 ---
 
 ## 📊 Quantitative ERP Impact & Performance
@@ -183,6 +189,19 @@ COER Retro OS adheres to a cohesive **Retro-Dark Neo-Brutalist** visual standard
 * **Ephemeral Sessions:** Logging in as a different student immediately purges local caches and syncs the new account.
 
 👉 **Read our comprehensive [Privacy Policy (`PRIVACY_POLICY.md`)](./PRIVACY_POLICY.md)** for detailed data handling disclosures and single-purpose specifications.
+
+---
+
+## ☕ Support the Developer ("Buy me a Chai")
+
+COER Retro OS was built with late-night reverse engineering, passion for tactile UI, and lots of chai — designed to rescue fellow COERians from 180-feedback lockout gates, 20-minute IIS session timeouts, and clunky legacy tables.
+
+If this extension made your academic semester smoother, consider fueling ongoing updates with a cutting chai!
+
+* **UPI ID:** `6396950805@slc`
+* **Payee Name:** Pranav Pandey
+* **Direct Access:** Click the subtle, unhighlighted **☕ Buy me a Chai** button located in the dashboard footer or extension popup to copy the UPI ID or scan the offline QR code.
+* **100% On-Device:** Zero telemetry, zero payment SDKs, and 100% offline local QR rendering.
 
 ---
 
