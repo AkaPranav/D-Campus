@@ -11,18 +11,21 @@ credentials
 *.key
 
 # ------------------------------------------------------------------------------
-# 2. Python Automation & Internal Test Scripts (Ignore all scripts & .py files)
+# 2. Internal Tools, Scripts & Documentation Dumps (Ignored)
 # ------------------------------------------------------------------------------
 scripts/
 *.py
+doc/
+docs/
 
 # ------------------------------------------------------------------------------
-# 3. Delivered Documentation (Track only public docs & specifications)
+# 3. Delivered Documentation & Policies (Tracked)
 # ------------------------------------------------------------------------------
 *.md
 !README.md
 !ANALYSIS.md
-!docs/*.md
+!PRIVACY_POLICY.md
+!LICENSE
 
 # ------------------------------------------------------------------------------
 # 4. Scraped Student ERP Data & Academic Downloads

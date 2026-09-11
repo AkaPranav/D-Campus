@@ -3,8 +3,8 @@
 [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
 [![Version](https://img.shields.io/badge/Version-v1.2.0-06b6d4?style=for-the-badge)](#)
 [![Technical Analysis](https://img.shields.io/badge/ERP_Impact-Engineering_Report-10b981?style=for-the-badge)](./ANALYSIS.md)
-[![Design System](https://img.shields.io/badge/Theme-Retro_Dark_Neo--Brutalist-a855f7?style=for-the-badge)](./docs/DESIGN.md)
-[![Privacy Policy](https://img.shields.io/badge/Privacy_Policy-100%25_On--Device-10b981?style=for-the-badge)](./docs/PRIVACY_POLICY.md)
+[![Design System](https://img.shields.io/badge/Theme-Retro_Dark_Neo--Brutalist-a855f7?style=for-the-badge)](#-design-system)
+[![Privacy Policy](https://img.shields.io/badge/Privacy_Policy-100%25_On--Device-10b981?style=for-the-badge)](./PRIVACY_POLICY.md)
 [![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](LICENSE)
 
 > A cyberpunk retro-dark augmentation suite for the **COER University ERP Student Portal**, transforming clunky legacy tables into a high-contrast, tactical dashboard with real-time academic synchronization, priority assignment queues, and single-click workflows.
@@ -182,7 +182,7 @@ COER Retro OS adheres to a cohesive **Retro-Dark Neo-Brutalist** visual standard
 * **Zero Analytics:** Contains no Google Analytics, trackers, or advertising libraries.
 * **Ephemeral Sessions:** Logging in as a different student immediately purges local caches and syncs the new account.
 
-👉 **Read our comprehensive [Privacy Policy (`docs/PRIVACY_POLICY.md`)](./docs/PRIVACY_POLICY.md)** for detailed data handling disclosures and single-purpose specifications.
+👉 **Read our comprehensive [Privacy Policy (`PRIVACY_POLICY.md`)](./PRIVACY_POLICY.md)** for detailed data handling disclosures and single-purpose specifications.
 
 ---
 

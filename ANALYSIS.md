@@ -1,11 +1,13 @@
 # 📊 Technical & Quantitative Impact Analysis: COER Retro OS vs. Legacy ERP
 
 [![Documentation](https://img.shields.io/badge/Documentation-README.md-4285F4?style=for-the-badge&logo=readme&logoColor=white)](./README.md)
+[![Privacy Policy](https://img.shields.io/badge/Privacy_Policy-100%25_On--Device-10b981?style=for-the-badge)](./PRIVACY_POLICY.md)
+[![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](./LICENSE)
 [![Analysis](https://img.shields.io/badge/Analysis-Grounded_Engineering-06b6d4?style=for-the-badge)](#)
 [![Payload Reduction](https://img.shields.io/badge/Payload_Reduction-98.5%25-10b981?style=for-the-badge)](#)
 [![Offline Ready](https://img.shields.io/badge/Offline-Local_First-f59e0b?style=for-the-badge)](#)
 
-> **Navigation:** [← Back to Main Repository Documentation (`README.md`)](./README.md)
+> **Navigation:** [← Back to Main Documentation (`README.md`)](./README.md) • [🔒 Privacy Policy (`PRIVACY_POLICY.md`)](./PRIVACY_POLICY.md) • [📜 MIT License (`LICENSE`)](./LICENSE)
 
 ---
 
@@ -181,4 +183,4 @@ The technical evidence demonstrates that **COER Retro OS operates as an effectiv
 
 ---
 
-> **Navigation:** [← Back to Main Repository Documentation (`README.md`)](./README.md)
+> **Navigation:** [← Back to Main Documentation (`README.md`)](./README.md) • [🔒 Privacy Policy (`PRIVACY_POLICY.md`)](./PRIVACY_POLICY.md) • [📜 MIT License (`LICENSE`)](./LICENSE)
