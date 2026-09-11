@@ -190,8 +190,20 @@ async function loadAndRenderData() {
     document.getElementById('att-total-lec').textContent = `${att.totalLectures} Classes`;
     document.getElementById('att-pres-lec').textContent = `${att.totalPresent} Present`;
 
-    const needed = Math.max(0, Math.ceil(3 * att.totalLectures - 4 * att.totalPresent));
-    document.getElementById('att-target-text').textContent = isSafe ? 'Target achieved ✓' : `Need: +${needed} classes`;
+    if (isSafe) {
+      const canBunk = Math.max(0, Math.floor((4 * att.totalPresent - 3 * att.totalLectures) / 3));
+      if (canBunk > 0) {
+        document.getElementById('att-target-text').textContent = `Can bunk: ${canBunk} class${canBunk > 1 ? 'es' : ''} ✓`;
+        document.getElementById('att-target-text').style.color = 'var(--accent-emerald)';
+      } else {
+        document.getElementById('att-target-text').textContent = 'Safe margin: 0 (75% edge)';
+        document.getElementById('att-target-text').style.color = 'var(--accent-gold)';
+      }
+    } else {
+      const needed = Math.max(0, Math.ceil(3 * att.totalLectures - 4 * att.totalPresent));
+      document.getElementById('att-target-text').textContent = `Need: +${needed} classes`;
+      document.getElementById('att-target-text').style.color = 'var(--accent-gold)';
+    }
   }
 
   // 3. Render Timetable

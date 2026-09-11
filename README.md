@@ -63,7 +63,7 @@
 
 ### 📊 1. Attendance Intelligence Module
 - **Retro Radial KPI Gauge:** Live overall attendance calculation with visual color-coded thresholds (`≥75%` safe emerald vs. `<75%` danger rose).
-- **Shortfall Math Engine:** Automatically calculates `Math.max(0, Math.ceil(3 * total - 4 * present))` to report the exact number of consecutive classes required to hit the 75% exam cutoff.
+- **Shortfall & Bunking Math Engine:** Automatically calculates consecutive classes required to reach 75% (`3T - 4P`) when in deficit, or exact safe bunk allowance (`floor((4P - 3T) / 3)`) when on track (≥75%) before falling below the exam eligibility threshold.
 - **Subject-by-Subject Breakdown:** Searchable table with lecture deliveries, presences, percentages, and faculty details.
 
 ### 📁 2. Priority Assignment & Notes Hub

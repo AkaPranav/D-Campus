@@ -419,16 +419,25 @@ async function syncAllData(customRegId) {
           totalPresent: present,
           percentage: pct,
           isSafe: pct >= 75,
-          neededFor75: Math.max(0, Math.ceil(3 * total - 4 * present))
+          neededFor75: Math.max(0, Math.ceil(3 * total - 4 * present)),
+          canBunk: pct >= 75 ? Math.max(0, Math.floor((4 * present - 3 * total) / 3)) : 0
         };
       });
 
+      const overallTotal = overall ? parseInt(overall.TotalLecture) : 0;
+      const overallPresent = overall ? parseInt(overall.TotalPresent) : 0;
+      const overallPct = overall ? parseFloat(overall.TotalPercentage) : 0;
+      const overallSafe = overallPct >= 75;
+
       attendanceData = {
-        overallPercentage: overall ? parseFloat(overall.TotalPercentage) : 0,
-        totalLectures: overall ? parseInt(overall.TotalLecture) : 0,
-        totalPresent: overall ? parseInt(overall.TotalPresent) : 0,
+        overallPercentage: overallPct,
+        totalLectures: overallTotal,
+        totalPresent: overallPresent,
         dateFrom: overall ? overall.DateFrom : null,
         dateTo: overall ? overall.DateTo : null,
+        isSafe: overallSafe,
+        neededFor75: Math.max(0, Math.ceil(3 * overallTotal - 4 * overallPresent)),
+        canBunk: overallSafe ? Math.max(0, Math.floor((4 * overallPresent - 3 * overallTotal) / 3)) : 0,
         subjects
       };
     }

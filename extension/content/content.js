@@ -696,6 +696,7 @@
     const strokeDashoffset = circumference - (pct / 100) * circumference;
 
     const classesNeeded = Math.max(0, Math.ceil(3 * att.totalLectures - 4 * att.totalPresent));
+    const canBunkOverall = isSafe ? Math.max(0, Math.floor((4 * att.totalPresent - 3 * att.totalLectures) / 3)) : 0;
 
     leftCard.innerHTML = `
       <div class="retro-card-header">
@@ -731,9 +732,11 @@
             <span class="val" style="color:var(--accent-rose)">${att.totalLectures - att.totalPresent} Classes</span>
           </div>
           <div class="kpi-metric-row" style="border-color:${isSafe ? 'var(--accent-emerald)' : 'var(--accent-rose)'}">
-            <span>Req. for 75% Barrier:</span>
+            <span>${isSafe ? 'Bunk Allowance (≥75%):' : 'Req. for 75% Barrier:'}</span>
             <span class="val" style="color:${isSafe ? 'var(--accent-emerald)' : 'var(--accent-gold)'}">
-              ${isSafe ? 'Target Achieved ✓' : `+${classesNeeded} Lectures`}
+              ${isSafe 
+                ? (canBunkOverall > 0 ? `Can bunk: ${canBunkOverall} lecture${canBunkOverall > 1 ? 's' : ''} ✓` : 'Safe margin: 0 (75% edge)') 
+                : `+${classesNeeded} Lectures`}
             </span>
           </div>
         </div>
@@ -780,6 +783,7 @@
         const sCard = document.createElement('div');
         sCard.className = 'subject-row-card';
         const subjSafe = subj.isSafe;
+        const subjCanBunk = subjSafe ? Math.max(0, Math.floor((4 * subj.totalPresent - 3 * subj.totalLectures) / 3)) : 0;
 
         sCard.innerHTML = `
           <div class="subject-header">
@@ -802,7 +806,13 @@
 
           <div class="subject-stats-bar">
             <span style="color:var(--text-secondary);">ATTENDED: <strong style="color:#fff;">${subj.totalPresent} / ${subj.totalLectures}</strong></span>
-            ${!subjSafe && subj.neededFor75 > 0 ? `<span style="color:var(--accent-gold);">NEED: <strong>+${subj.neededFor75}</strong> to hit 75%</span>` : '<span style="color:var(--accent-emerald);">ELIGIBLE FOR EXAMS ✓</span>'}
+            ${!subjSafe && subj.neededFor75 > 0 
+              ? `<span style="color:var(--accent-gold);">NEED: <strong>+${subj.neededFor75}</strong> to hit 75%</span>` 
+              : (subjCanBunk > 0 
+                  ? `<span style="color:var(--accent-emerald);" title="You can skip ${subjCanBunk} class${subjCanBunk > 1 ? 'es' : ''} and still maintain 75% attendance">CAN BUNK: <strong style="color:var(--accent-emerald);">${subjCanBunk}</strong> class${subjCanBunk > 1 ? 'es' : ''} ✓</span>`
+                  : `<span style="color:var(--accent-gold);" title="Attendance is exactly at the 75% threshold">BUNK: <strong>0</strong> (On 75% margin)</span>`
+                )
+            }
             <span style="font-weight:800; color:${subjSafe ? 'var(--accent-emerald)' : 'var(--accent-rose)'};">${subj.percentage}%</span>
           </div>
         `;
