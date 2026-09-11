@@ -65,6 +65,16 @@
   `;
   shadow.appendChild(triggerBtn);
 
+  // 3b. Inject Persistent Floating Chai Corner Button (Stays in corner)
+  const chaiCornerBtn = document.createElement('div');
+  chaiCornerBtn.id = 'coer-chai-corner-btn';
+  chaiCornerBtn.title = 'Buy Developer a Chai ☕ // Support COER Retro OS';
+  chaiCornerBtn.innerHTML = `
+    <span class="chai-icon-anim">☕</span>
+    <span>BUY ME A CHAI</span>
+  `;
+  shadow.appendChild(chaiCornerBtn);
+
   // 4. Inject Overlay Backdrop & Shell
   const backdrop = document.createElement('div');
   backdrop.id = 'coer-overlay-backdrop';
@@ -77,6 +87,7 @@
           <span id="retro-window-title-text">STUDENT TERMINAL // v2.0.4</span>
         </div>
         <div class="retro-window-controls">
+          <button class="retro-btn retro-btn-chai retro-btn-sm" id="btn-window-chai" title="Support development with a Chai ☕">☕ BUY ME A CHAI</button>
           <button class="retro-btn retro-btn-gold retro-btn-sm" id="btn-global-sync">⚡ SYNC DATA</button>
           <div class="retro-dot-group">
             <span class="retro-dot min" id="btn-window-min" title="Minimize (Collapse)"></span>
@@ -134,6 +145,15 @@
   // Event Listeners & UI Wireup
   // ----------------------------------------------------------------
   triggerBtn.addEventListener('click', toggleOverlay);
+  chaiCornerBtn.addEventListener('click', () => openChaiModal(false));
+
+  const windowChaiBtn = shadow.getElementById('btn-window-chai');
+  if (windowChaiBtn) {
+    windowChaiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openChaiModal(false);
+    });
+  }
   
   const mainWindow = backdrop.querySelector('.retro-main-window');
   const minBtn = shadow.getElementById('btn-window-min');
@@ -1664,6 +1684,195 @@
   }
 
   // ----------------------------------------------------------------
+  // BUY ME A CHAI MODAL (Auto on first install / On-demand from corner)
+  // ----------------------------------------------------------------
+  function openChaiModal(isFirstTime = false) {
+    const modalContainer = shadow.getElementById('coer-safety-modal-container');
+    if (!modalContainer) return;
+
+    let selectedAmount = 20;
+    const upiId = 'heypranavpandey@okaxis';
+    const payeeName = 'Pranav Pandey';
+    const qrImgUrl = chrome.runtime.getURL('icons/chai_qr.png');
+
+    modalContainer.innerHTML = `
+      <div id="coer-chai-modal-backdrop">
+        <div class="chai-modal-box">
+          <div class="chai-modal-header">
+            <div class="chai-modal-title">
+              <span class="chai-icon-anim">☕</span>
+              <span>${isFirstTime ? 'WELCOME TO COER RETRO OS // BUY ME A CHAI' : 'BUY ME A CHAI // SUPPORT DEVELOPER'}</span>
+            </div>
+            <span class="retro-dot close" id="btn-close-chai-modal" title="Close (ESC)"></span>
+          </div>
+
+          <div class="chai-modal-body">
+            <!-- Hero banner -->
+            <div class="chai-hero-card">
+              <div class="chai-hero-icon-box">
+                <span class="chai-big-icon">☕</span>
+              </div>
+              <div class="chai-hero-text">
+                <h4>${isFirstTime ? 'Hey there, fellow COERian! 👋' : 'Fueling code & servers with Chai! ☕'}</h4>
+                <p>
+                  COER Retro OS was built with love, late-night reverse engineering, and LOTS of chai — to rescue you from compulsory 180 feedback locks, 20-minute logouts, and slow tables.
+                </p>
+                <div class="chai-hero-subtag">
+                  If this extension saved your attendance or sanity today, consider buying me a cutting chai!
+                </div>
+              </div>
+            </div>
+
+            <!-- Amount Preset Grid -->
+            <div class="chai-section-label">SELECT YOUR CHAI CONTRIBUTION:</div>
+            <div class="chai-presets-grid">
+              <button class="chai-preset-chip active" data-amount="20">
+                <span class="chai-chip-emoji">☕</span>
+                <span class="chai-chip-amount">₹20</span>
+                <span class="chai-chip-name">Cutting Chai</span>
+              </button>
+              <button class="chai-preset-chip" data-amount="50">
+                <span class="chai-chip-emoji">🍵</span>
+                <span class="chai-chip-amount">₹50</span>
+                <span class="chai-chip-name">Masala Chai</span>
+              </button>
+              <button class="chai-preset-chip" data-amount="100">
+                <span class="chai-chip-emoji">☕🥪</span>
+                <span class="chai-chip-amount">₹100</span>
+                <span class="chai-chip-name">Chai + Samosa</span>
+              </button>
+              <button class="chai-preset-chip" data-amount="200">
+                <span class="chai-chip-emoji">💖</span>
+                <span class="chai-chip-amount">₹200</span>
+                <span class="chai-chip-name">Super Supporter</span>
+              </button>
+            </div>
+
+            <!-- Copyable UPI Card -->
+            <div class="chai-upi-card">
+              <div class="chai-upi-header">
+                <span>DIRECT UPI PAYMENT</span>
+                <span class="chai-secure-tag">100% DIRECT // ZERO FEES</span>
+              </div>
+              <div class="chai-upi-display-row">
+                <div class="chai-upi-val" id="chai-upi-text">${upiId}</div>
+                <button class="retro-btn retro-btn-gold retro-btn-sm" id="btn-copy-upi">
+                  📋 COPY UPI ID
+                </button>
+              </div>
+              <div class="chai-upi-tip" id="chai-upi-note">
+                Amount: <strong>₹20</strong> • Payee: <strong>${payeeName}</strong>
+              </div>
+            </div>
+
+            <!-- QR Code Section (Collapsible) -->
+            <div class="chai-qr-wrapper" id="chai-qr-wrapper" style="display:none;">
+              <div class="chai-qr-box">
+                <img src="${qrImgUrl}" alt="UPI QR Code" class="chai-qr-img" id="chai-qr-image" />
+                <div class="chai-qr-caption">
+                  Scan using Google Pay, PhonePe, Paytm or any UPI App
+                </div>
+              </div>
+            </div>
+
+            <div class="chai-toggle-row">
+              <button class="mini-btn-link" id="btn-toggle-qr">
+                📷 SHOW QR CODE
+              </button>
+            </div>
+          </div>
+
+          <div class="chai-modal-footer">
+            <button class="retro-btn retro-btn-ghost retro-btn-sm" id="btn-dismiss-chai">
+              ${isFirstTime ? '✓ LET\'S GO TO DASHBOARD' : 'MAYBE LATER'}
+            </button>
+            <a href="upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=20&cu=INR&tn=COER%20Retro%20OS%20Chai" class="retro-btn retro-btn-emerald retro-btn-sm" id="btn-intent-upi" target="_blank">
+              🚀 PAY VIA UPI APP
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Handlers
+    const backdrop = modalContainer.querySelector('#coer-chai-modal-backdrop');
+    const closeBtn = modalContainer.querySelector('#btn-close-chai-modal');
+    const dismissBtn = modalContainer.querySelector('#btn-dismiss-chai');
+    const copyBtn = modalContainer.querySelector('#btn-copy-upi');
+    const toggleQrBtn = modalContainer.querySelector('#btn-toggle-qr');
+    const qrWrapper = modalContainer.querySelector('#chai-qr-wrapper');
+    const chips = modalContainer.querySelectorAll('.chai-preset-chip');
+    const noteEl = modalContainer.querySelector('#chai-upi-note');
+    const intentBtn = modalContainer.querySelector('#btn-intent-upi');
+
+    function updateSelection(amt) {
+      selectedAmount = amt;
+      chips.forEach(c => {
+        if (parseInt(c.getAttribute('data-amount'), 10) === amt) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+      noteEl.innerHTML = `Amount: <strong>₹${amt}</strong> • Payee: <strong>${payeeName}</strong>`;
+      intentBtn.href = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=COER%20Retro%20OS%20Chai`;
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const amt = parseInt(chip.getAttribute('data-amount'), 10);
+        updateSelection(amt);
+      });
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(upiId);
+        copyBtn.innerText = '✓ COPIED! THANK YOU ☕';
+        copyBtn.style.background = 'var(--accent-emerald)';
+        copyBtn.style.color = '#000';
+        showToast(`UPI ID copied: ${upiId}. Thank you for the Chai! ☕`, 'success');
+        setTimeout(() => {
+          copyBtn.innerText = '📋 COPY UPI ID';
+          copyBtn.style.background = '';
+          copyBtn.style.color = '';
+        }, 3000);
+      } catch (err) {
+        showToast(`UPI ID: ${upiId}`, 'info');
+      }
+    });
+
+    toggleQrBtn.addEventListener('click', () => {
+      if (qrWrapper.style.display === 'none') {
+        qrWrapper.style.display = 'block';
+        toggleQrBtn.innerText = '✕ HIDE QR CODE';
+      } else {
+        qrWrapper.style.display = 'none';
+        toggleQrBtn.innerText = '📷 SHOW QR CODE';
+      }
+    });
+
+    function dismissModal() {
+      chrome.storage.local.set({ hasSeenChaiModal: true });
+      closeChaiModal();
+      if (isFirstTime) {
+        showToast('Enjoy COER Retro OS! You can find "Buy me a Chai" in the corner anytime ☕', 'success');
+      }
+    }
+
+    closeBtn.addEventListener('click', dismissModal);
+    dismissBtn.addEventListener('click', dismissModal);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) dismissModal();
+    });
+  }
+
+  function closeChaiModal() {
+    const modalContainer = shadow.getElementById('coer-safety-modal-container');
+    if (modalContainer) modalContainer.innerHTML = '';
+  }
+
+  // ----------------------------------------------------------------
   // DOWNLOAD PIPELINE
   // ----------------------------------------------------------------
   function downloadAssignmentFile(detailId, title, defaultExt) {
@@ -2027,4 +2236,13 @@
   // Auto-initialize cached storage and check student session on script run
   loadCachedDataAndRender();
   checkAndSyncStudentSession();
+
+  // First-Time Install Welcome & Chai Pop-Up Trigger
+  chrome.storage.local.get(['hasSeenChaiModal'], (result) => {
+    if (result.hasSeenChaiModal === undefined || result.hasSeenChaiModal === false) {
+      setTimeout(() => {
+        openChaiModal(true);
+      }, 1200);
+    }
+  });
 })();

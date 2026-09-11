@@ -34,6 +34,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Wire Chai Support Modal in popup
+  const popupChaiBtn = document.getElementById('btn-popup-chai');
+  const popupChaiModal = document.getElementById('popup-chai-modal');
+  const closePopupChaiBtn = document.getElementById('btn-close-popup-chai');
+  const copyPopupUpiBtn = document.getElementById('btn-copy-popup-upi');
+  const upiId = 'heypranavpandey@okaxis';
+
+  if (popupChaiBtn && popupChaiModal) {
+    popupChaiBtn.addEventListener('click', () => {
+      popupChaiModal.style.display = 'flex';
+    });
+
+    if (closePopupChaiBtn) {
+      closePopupChaiBtn.addEventListener('click', () => {
+        popupChaiModal.style.display = 'none';
+      });
+    }
+
+    popupChaiModal.addEventListener('click', (e) => {
+      if (e.target === popupChaiModal) {
+        popupChaiModal.style.display = 'none';
+      }
+    });
+
+    if (copyPopupUpiBtn) {
+      copyPopupUpiBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(upiId);
+          copyPopupUpiBtn.innerText = '✓ COPIED';
+          setTimeout(() => { copyPopupUpiBtn.innerText = '📋 COPY'; }, 2500);
+        } catch (e) {
+          prompt('UPI ID:', upiId);
+        }
+      });
+    }
+  }
+
   // Wire Calendar Export buttons
   const calBtn = document.getElementById('btn-export-cal');
   const calMiniBtn = document.getElementById('btn-export-cal-mini');

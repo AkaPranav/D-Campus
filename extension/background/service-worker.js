@@ -123,9 +123,17 @@ async function touchSession() {
 }
 
 // 1. Extension Lifecycle: onInstalled & onStartup
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log('[COER OS] Service Worker installed/updated.');
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log('[COER OS] Service Worker installed/updated. Reason:', details?.reason);
   await setupAlarms();
+
+  if (details?.reason === 'install') {
+    // First-time install: queue welcome & Chai popup
+    await chrome.storage.local.set({
+      hasSeenChaiModal: false,
+      chaiFirstInstall: true
+    });
+  }
 
   const data = await chrome.storage.local.get(['regId']);
   if (!data.regId) {

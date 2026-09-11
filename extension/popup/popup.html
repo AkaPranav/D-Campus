@@ -96,9 +96,32 @@
 
     <!-- Footer Controls -->
     <div class="popup-footer">
+      <button class="retro-btn retro-btn-chai" id="btn-popup-chai" title="Fuel the developer with a Chai ☕">☕ CHAI</button>
       <button class="retro-btn retro-btn-gold" id="btn-sync-now">⚡ SYNC</button>
       <button class="retro-btn retro-btn-emerald" id="btn-export-cal" title="Sync schedule to Google Calendar">📅 CALENDAR</button>
       <button class="retro-btn retro-btn-cyan" id="btn-open-erp">🖥 OPEN ERP</button>
+    </div>
+
+    <!-- Chai Modal Overlay in Popup -->
+    <div id="popup-chai-modal" class="popup-chai-overlay" style="display:none;">
+      <div class="popup-chai-card">
+        <div class="chai-card-header">
+          <span>☕ BUY ME A CHAI</span>
+          <span class="popup-dot close" id="btn-close-popup-chai">✕</span>
+        </div>
+        <div class="popup-chai-body">
+          <div class="popup-chai-tag">Fueling COER Retro OS with Chai ☕</div>
+          <div class="popup-upi-box">
+            <span class="popup-upi-label">UPI:</span>
+            <span class="popup-upi-val" id="popup-upi-val">heypranavpandey@okaxis</span>
+            <button class="mini-btn-link" id="btn-copy-popup-upi">📋 COPY</button>
+          </div>
+          <div style="text-align:center;">
+            <img src="../icons/chai_qr.png" alt="UPI QR" class="popup-qr-img" />
+            <div style="font-size:9.5px; color:var(--text-muted); margin-top:4px;">Scan with GPay / PhonePe / Paytm</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
