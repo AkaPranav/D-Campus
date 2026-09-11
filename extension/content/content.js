@@ -87,7 +87,6 @@
           <span id="retro-window-title-text">STUDENT TERMINAL // v2.0.4</span>
         </div>
         <div class="retro-window-controls">
-          <button class="retro-btn retro-btn-chai retro-btn-sm" id="btn-window-chai" title="Support development with a Chai ☕">☕ BUY ME A CHAI</button>
           <button class="retro-btn retro-btn-gold retro-btn-sm" id="btn-global-sync">⚡ SYNC DATA</button>
           <div class="retro-dot-group">
             <span class="retro-dot min" id="btn-window-min" title="Minimize (Collapse)"></span>
@@ -129,12 +128,28 @@
           ⚡ INITIALIZING RETRO OS...
         </div>
       </div>
-    </div>
 
-    <!-- Safety Shield Modal Container -->
-    <div id="coer-safety-modal-container"></div>
+      <!-- Retro Window Footer Bar -->
+      <div class="retro-window-footer">
+        <div class="retro-footer-left">
+          <span class="retro-footer-tag">COER RETRO OS</span>
+          <span class="retro-footer-text">v1.2.0 • ALL SYSTEMS OPERATIONAL</span>
+        </div>
+        <div class="retro-footer-right">
+          <button class="retro-chai-corner-btn" id="btn-dashboard-corner-chai" title="Support developer with a Chai ☕">
+            <span class="chai-corner-icon">☕</span>
+            <span>Buy me a Chai</span>
+          </button>
+        </div>
+      </div>
+    </div>
   `;
   shadow.appendChild(backdrop);
+
+  // Safety Shield & Global Modal Container (Direct Child of Shadow for clean multi-layer popups)
+  const modalContainer = document.createElement('div');
+  modalContainer.id = 'coer-safety-modal-container';
+  shadow.appendChild(modalContainer);
 
   // Toast Container
   const toastContainer = document.createElement('div');
@@ -150,6 +165,14 @@
   const windowChaiBtn = shadow.getElementById('btn-window-chai');
   if (windowChaiBtn) {
     windowChaiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openChaiModal(false);
+    });
+  }
+
+  const dashboardCornerChaiBtn = shadow.getElementById('btn-dashboard-corner-chai');
+  if (dashboardCornerChaiBtn) {
+    dashboardCornerChaiBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       openChaiModal(false);
     });
@@ -202,11 +225,18 @@
       e.preventDefault();
       toggleOverlay();
     }
-    if (e.key === 'Escape' && backdrop.classList.contains('active')) {
-      if (appState.activeSubmitAssignment) {
-        closeSafetyModal();
-      } else {
-        closeOverlay();
+    if (e.key === 'Escape') {
+      const chaiModal = shadow.querySelector('#coer-chai-modal-backdrop');
+      if (chaiModal) {
+        closeChaiModal();
+        return;
+      }
+      if (backdrop.classList.contains('active')) {
+        if (appState.activeSubmitAssignment) {
+          closeSafetyModal();
+        } else {
+          closeOverlay();
+        }
       }
     }
   });
@@ -1691,7 +1721,7 @@
     if (!modalContainer) return;
 
     let selectedAmount = 20;
-    const upiId = 'heypranavpandey@okaxis';
+    const upiId = '6396950805@slc';
     const payeeName = 'Pranav Pandey';
     const qrImgUrl = chrome.runtime.getURL('icons/chai_qr.png');
 

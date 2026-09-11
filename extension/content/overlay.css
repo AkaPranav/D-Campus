@@ -157,7 +157,8 @@
 }
 .retro-main-window.minimized .retro-hud-subbar,
 .retro-main-window.minimized .retro-nav-bar,
-.retro-main-window.minimized .retro-content-container {
+.retro-main-window.minimized .retro-content-container,
+.retro-main-window.minimized .retro-window-footer {
   display: none !important;
 }
 
@@ -1221,65 +1222,131 @@
    15. PERSISTENT FLOATING CHAI CORNER BUTTON & MODAL
    ============================================================= */
 
-/* Floating corner button right above HUD trigger */
+/* Retro Window Footer Bar (Hosts corner button in full dashboard) */
+.retro-window-footer {
+  background: #0e1219;
+  border-top: 1.5px solid var(--border-base);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.retro-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.retro-footer-tag {
+  background: #151a24;
+  border: 1px solid #232a3b;
+  color: var(--text-secondary);
+  font-size: 9.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+.retro-footer-text {
+  font-size: 10.5px;
+  color: #64748b;
+}
+.retro-footer-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Subtle, Unhighlighted Chai Corner Button in Dashboard */
+.retro-chai-corner-btn {
+  background: #141923;
+  border: 1px solid #283244;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px #000000;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+  outline: none;
+}
+.retro-chai-corner-btn .chai-corner-icon {
+  font-size: 12px;
+  opacity: 0.85;
+}
+.retro-chai-corner-btn:hover {
+  background: #1e2637;
+  border-color: #43516d;
+  color: #e2e8f0;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000;
+}
+.retro-chai-corner-btn:hover .chai-corner-icon {
+  opacity: 1;
+}
+.retro-chai-corner-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+/* Floating persistent corner button on ERP page (Subtle & Unhighlighted) */
 #coer-chai-corner-btn {
   position: fixed;
   bottom: 74px;
   right: 24px;
   z-index: 2147483639;
-  background: linear-gradient(135deg, #23160a, #150d06);
-  border: 2px solid #f59e0b;
-  color: #fbbf24;
+  background: #11151e;
+  border: 1.5px solid #2d3748;
+  color: #94a3b8;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 800;
-  padding: 8px 14px;
+  font-weight: 700;
+  padding: 7px 12px;
   border-radius: 6px;
-  box-shadow: 4px 4px 0px #000000;
+  box-shadow: 3px 3px 0px #000000;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  gap: 7px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   user-select: none;
-  animation: chaiBorderPulse 3s infinite ease-in-out;
 }
 #coer-chai-corner-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #000000;
-  background: linear-gradient(135deg, #38210e, #23160a);
-  border-color: #fde68a;
-  color: #fff;
+  box-shadow: 5px 5px 0px #000000;
+  background: #1a2230;
+  border-color: #4b5563;
+  color: #f1f5f9;
 }
 #coer-chai-corner-btn:active {
-  transform: translate(2px, 2px);
+  transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px #000000;
 }
 .chai-icon-anim {
-  font-size: 14px;
+  font-size: 13px;
   display: inline-block;
-  animation: chaiSteamSway 2.4s infinite ease-in-out;
-}
-@keyframes chaiSteamSway {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-3px) rotate(5deg); }
-}
-@keyframes chaiBorderPulse {
-  0%, 100% { border-color: #f59e0b; }
-  50% { border-color: #fde68a; }
 }
 
-/* Chai button variant */
+/* Chai button variant (Subtle & Unhighlighted) */
 .retro-btn-chai {
-  background: #f59e0b !important;
-  color: #0b0f19 !important;
-  font-weight: 800 !important;
-  border: 1.5px solid #000 !important;
+  background: #1a202c !important;
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  border: 1px solid #374151 !important;
   box-shadow: 2px 2px 0 #000 !important;
 }
 .retro-btn-chai:hover {
-  background: #fbbf24 !important;
-  color: #000 !important;
+  background: #252e3e !important;
+  color: #e2e8f0 !important;
+  border-color: #4b5563 !important;
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 #000 !important;
 }

@@ -381,12 +381,15 @@ body {
 }
 
 .retro-btn-chai {
-  background: #f59e0b !important;
-  color: #000 !important;
-  font-weight: 800 !important;
+  background: #1a202c !important;
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  border: 1px solid #374151 !important;
 }
 .retro-btn-chai:hover {
-  background: #fbbf24 !important;
+  background: #252e3e !important;
+  color: #e2e8f0 !important;
+  border-color: #4b5563 !important;
 }
 
 /* Popup Chai Overlay */

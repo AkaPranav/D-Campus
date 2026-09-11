@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const popupChaiModal = document.getElementById('popup-chai-modal');
   const closePopupChaiBtn = document.getElementById('btn-close-popup-chai');
   const copyPopupUpiBtn = document.getElementById('btn-copy-popup-upi');
-  const upiId = 'heypranavpandey@okaxis';
+  const upiId = '6396950805@slc';
 
   if (popupChaiBtn && popupChaiModal) {
     popupChaiBtn.addEventListener('click', () => {
