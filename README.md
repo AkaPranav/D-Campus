@@ -1,6 +1,7 @@
 # ⚡ COER Retro OS — Modern ERP Suite
 
 [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
+[![Version](https://img.shields.io/badge/Version-v1.1.0-06b6d4?style=for-the-badge)](#)
 [![Design System](https://img.shields.io/badge/Theme-Retro_Dark_Neo--Brutalist-a855f7?style=for-the-badge)](#-design-system)
 [![Privacy First](https://img.shields.io/badge/Privacy-100%25_On--Device-10b981?style=for-the-badge)](#-privacy--security)
 [![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](LICENSE)
@@ -68,6 +69,12 @@
 - **Account Switch Detection:** Automatically flushes stale caches and re-synchronizes when a different student logs in on the same workstation.
 - **CAPTCHA Helper:** Detects autofilled credentials on the login page and automatically autofocuses the cursor onto the CAPTCHA entry box.
 
+### 📅 6. Google Calendar / iCal (.ics) Timetable Sync
+- **RFC 5545 iCalendar Engine:** Standalone client-side generator (`utils/calendar.js`) producing standard `.ics` calendar files with embedded `Asia/Kolkata` timezone specifications.
+- **Automated 10-Minute Phone Alerts:** Every lecture includes `VALARM` triggers (`TRIGGER:-PT10M`) ensuring Google Calendar pushes automatic notifications to the student's mobile phone and university email before every class starts.
+- **Semester Recurrence Rules:** Generates recurring weekly events (`RRULE:FREQ=WEEKLY;BYDAY=...`) automatically bounded by the academic semester end date.
+- **1-Click Google Calendar Import:** Direct link to Google Calendar's import interface for 2-click desktop or mobile synchronization.
+
 ---
 
 ## 🛠️ Architecture & Tech Stack
@@ -76,6 +83,8 @@
 extension/
 ├── manifest.json              # Chrome Manifest V3 configuration & scoped permissions
 ├── icons/                     # Neo-brutalist pixelated icons (16px, 48px, 128px)
+├── utils/
+│   └── calendar.js            # RFC 5545 iCalendar (.ics) generator engine & scheduler
 ├── background/
 │   └── service-worker.js      # Background sync engine, alarms, cookie-authenticated fetchers
 ├── content/
