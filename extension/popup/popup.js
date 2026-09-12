@@ -246,11 +246,12 @@ async function loadAndRenderData() {
   // 3. Render Timetable
   if (data.timetableData) {
     const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const actualDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const d = new Date().getDay();
     const isWeekday = d >= 1 && d <= 5;
     const today = isWeekday ? weekdays[d - 1] : "Monday";
 
-    document.getElementById('today-name-badge').textContent = isWeekday ? today.toUpperCase() : 'WEEKEND (MON)';
+    document.getElementById('today-name-badge').textContent = isWeekday ? today.toUpperCase() : `WEEKEND (${actualDayNames[d].toUpperCase().slice(0, 3)}) • OFF`;
 
     const periods = data.timetableData[today] || [];
     const now = new Date();
@@ -303,14 +304,14 @@ async function loadAndRenderData() {
       if (nextPeriod) nextPeriod.isMonday = true;
     }
 
-    if (activePeriod) {
+    if (activePeriod && isWeekday) {
       document.getElementById('tt-now-val').textContent = `${activePeriod.period}: ${activePeriod.shortSubject || activePeriod.subject} (👤 ${activePeriod.faculty})`;
     } else {
-      document.getElementById('tt-now-val').textContent = isWeekday ? 'No class running right now' : 'Weekend - No classes today';
+      document.getElementById('tt-now-val').textContent = isWeekday ? 'No class running right now' : `Weekend (${actualDayNames[d]}) — Campus closed`;
     }
 
     if (nextPeriod) {
-      const prefix = nextPeriod.isTomorrow ? 'Tomorrow ' : (nextPeriod.isMonday ? 'Mon ' : '');
+      const prefix = !isWeekday ? 'Mon ' : (nextPeriod.isTomorrow ? 'Tomorrow ' : (nextPeriod.isMonday ? 'Mon ' : ''));
       document.getElementById('tt-next-val').textContent = `${prefix}${nextPeriod.period} (${nextPeriod.time}): ${nextPeriod.shortSubject || nextPeriod.subject} (👤 ${nextPeriod.faculty})`;
     } else {
       document.getElementById('tt-next-val').textContent = 'Classes concluded for today';

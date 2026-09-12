@@ -716,6 +716,30 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+.now-next-card.weekend-card {
+  background: linear-gradient(135deg, #1b162b, #100f1c);
+  border-color: #8b5cf6;
+}
+.now-box.weekend-state .now-label {
+  color: #a78bfa;
+}
+.weekend-schedule-notice {
+  background: #151126;
+  border: 1.5px solid #7c3aed;
+  color: #c4b5fd;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 2px 2px 0 #000;
+}
+.weekend-schedule-notice strong {
+  color: #f5f3ff;
+}
 
 .day-selector-bar {
   display: flex;

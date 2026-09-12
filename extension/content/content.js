@@ -665,7 +665,11 @@
     const nextEl = shadow.getElementById('ticker-next-class');
     if (nextEl) {
       if (nextInfo) {
-        nextEl.innerHTML = `NEXT CLASS: <strong style="color:var(--accent-cyan)">${nextInfo.label} • ${nextInfo.subject}</strong>`;
+        if (nextInfo.isWeekend) {
+          nextEl.innerHTML = `NEXT CLASS: <strong style="color:var(--accent-cyan)">${nextInfo.label} • ${nextInfo.subject}</strong> <span style="color:var(--accent-purple); font-size:10px; font-weight:800;">[WEEKEND OFF]</span>`;
+        } else {
+          nextEl.innerHTML = `NEXT CLASS: <strong style="color:var(--accent-cyan)">${nextInfo.label} • ${nextInfo.subject}</strong>`;
+        }
       } else {
         nextEl.innerHTML = `NEXT CLASS: <strong>SCHEDULE CONCLUDED</strong>`;
       }
@@ -1196,36 +1200,62 @@
 
     // COER runs Monday through Friday only (No Saturday)
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    const todayName = getTodayDayName();
+    const dayInfo = getActualDayInfo();
 
     // 1. Dynamic "Now & Next" Live Lecture Card
     const nowNextInfo = getLiveLectureStatus(tt);
     const nowNextCard = document.createElement('div');
-    nowNextCard.className = 'now-next-card';
-    nowNextCard.innerHTML = `
-      <div class="now-box">
-        <div class="now-label">
-          <span class="hud-pulse-dot" style="background:var(--accent-gold); box-shadow:0 0 8px var(--accent-gold);"></span>
-          ACTIVE LECTURE NOW (${todayName})
-        </div>
-        <div class="now-title">${nowNextInfo.currentClass.subject}</div>
-        <div class="now-detail">
-          ${nowNextInfo.currentClass.period} &nbsp;•&nbsp; ${nowNextInfo.currentClass.time}
-          ${nowNextInfo.currentClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.currentClass.faculty}` : ''}
-        </div>
-      </div>
+    nowNextCard.className = `now-next-card ${nowNextInfo.isWeekend ? 'weekend-card' : ''}`;
 
-      <div class="next-box">
-        <div class="now-label" style="color:var(--accent-cyan)">
-          <span>⏭</span> NEXT UPCOMING CLASS
+    if (nowNextInfo.isWeekend) {
+      nowNextCard.innerHTML = `
+        <div class="now-box weekend-state">
+          <div class="now-label" style="color:var(--accent-purple);">
+            <span style="font-size:13px;">🌴</span> TODAY: ${nowNextInfo.actualToday.toUpperCase()} (CAMPUS OFF)
+          </div>
+          <div class="now-title">Weekend — No Classes Scheduled</div>
+          <div class="now-detail">
+            COER operates Monday to Friday. Classes resume Monday morning.
+          </div>
         </div>
-        <div class="now-title">${nowNextInfo.nextClass.subject}</div>
-        <div class="now-detail">
-          ${nowNextInfo.nextClass.period} &nbsp;•&nbsp; ${nowNextInfo.nextClass.time}
-          ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.nextClass.faculty}` : ''}
+
+        <div class="next-box">
+          <div class="now-label" style="color:var(--accent-cyan)">
+            <span>⏭</span> NEXT UPCOMING CLASS (MONDAY)
+          </div>
+          <div class="now-title">${nowNextInfo.nextClass.subject}</div>
+          <div class="now-detail">
+            ${nowNextInfo.nextClass.period} &nbsp;•&nbsp; ${nowNextInfo.nextClass.time}
+            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.nextClass.faculty}` : ''}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      nowNextCard.innerHTML = `
+        <div class="now-box">
+          <div class="now-label">
+            <span class="hud-pulse-dot" style="background:var(--accent-gold); box-shadow:0 0 8px var(--accent-gold);"></span>
+            ACTIVE LECTURE NOW (${dayInfo.actualDayName})
+          </div>
+          <div class="now-title">${nowNextInfo.currentClass.subject}</div>
+          <div class="now-detail">
+            ${nowNextInfo.currentClass.period} &nbsp;•&nbsp; ${nowNextInfo.currentClass.time}
+            ${nowNextInfo.currentClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.currentClass.faculty}` : ''}
+          </div>
+        </div>
+
+        <div class="next-box">
+          <div class="now-label" style="color:var(--accent-cyan)">
+            <span>⏭</span> NEXT UPCOMING CLASS
+          </div>
+          <div class="now-title">${nowNextInfo.nextClass.subject}</div>
+          <div class="now-detail">
+            ${nowNextInfo.nextClass.period} &nbsp;•&nbsp; ${nowNextInfo.nextClass.time}
+            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.nextClass.faculty}` : ''}
+          </div>
+        </div>
+      `;
+    }
 
     // 2. Day Selector Tabs (Monday - Friday) & Calendar Sync Action
     const dayBar = document.createElement('div');
@@ -1236,7 +1266,8 @@
 
     days.forEach(day => {
       const btn = document.createElement('button');
-      const isToday = day.toLowerCase() === todayName.toLowerCase();
+      // A day is only "today" if it's NOT a weekend and matches today's day name!
+      const isToday = !dayInfo.isWeekend && (day.toLowerCase() === dayInfo.actualDayName.toLowerCase());
       btn.className = `day-tab-btn ${appState.currentDay.toLowerCase() === day.toLowerCase() ? 'active' : ''}`;
       btn.textContent = isToday ? `${day.toUpperCase()} ★` : day.toUpperCase();
       btn.addEventListener('click', () => {
@@ -1268,7 +1299,7 @@
         </div>
       `;
     } else {
-      const isToday = appState.currentDay.toLowerCase() === todayName.toLowerCase();
+      const isToday = !dayInfo.isWeekend && (appState.currentDay.toLowerCase() === dayInfo.actualDayName.toLowerCase());
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -1397,6 +1428,15 @@
 
     wrapper.appendChild(nowNextCard);
     wrapper.appendChild(dayBar);
+    if (dayInfo.isWeekend) {
+      const weekendNotice = document.createElement('div');
+      weekendNotice.className = 'weekend-schedule-notice';
+      weekendNotice.innerHTML = `
+        <span style="font-size:14px;">🌴</span>
+        <span>TODAY IS <strong>${dayInfo.actualDayName.toUpperCase()} (WEEKEND / CAMPUS OFF)</strong>. NO CLASSES ARE RUNNING TODAY. SHOWING SCHEDULE PREVIEW FOR <strong>${appState.currentDay.toUpperCase()}</strong>.</span>
+      `;
+      wrapper.appendChild(weekendNotice);
+    }
     wrapper.appendChild(grid);
     return wrapper;
   }
@@ -2029,87 +2069,137 @@
   // ----------------------------------------------------------------
   // TIMETABLE UTILITY HELPERS
   // ----------------------------------------------------------------
-  function getTodayDayName() {
+  function getActualDayInfo() {
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const d = new Date().getDay();
-    // Default to Monday on weekends (COER runs Mon-Fri)
-    return (d === 0 || d === 6) ? "Monday" : dayNames[d];
+    const isWeekend = (d === 0 || d === 6);
+    const actualDayName = dayNames[d];
+    // Default to Monday on weekends for timetable preview
+    const defaultWeekday = isWeekend ? "Monday" : actualDayName;
+    return {
+      dayIndex: d,
+      isWeekend,
+      actualDayName,
+      defaultWeekday
+    };
+  }
+
+  function getTodayDayName() {
+    return getActualDayInfo().defaultWeekday;
   }
 
   function getLiveLectureStatus(timetable) {
+    const dayInfo = getActualDayInfo();
     const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    const d = new Date().getDay();
-    const isWeekday = d >= 1 && d <= 5;
-    const todayName = isWeekday ? weekdays[d - 1] : "Monday";
+
+    if (dayInfo.isWeekend) {
+      // Weekend: Campus is closed, classes resume Monday
+      const mon = timetable["Monday"] || [];
+      const firstMonClass = mon.find(p => !p.isFree);
+      const nextClass = {
+        period: firstMonClass ? `MON ${firstMonClass.period}` : 'MON P1',
+        time: firstMonClass ? firstMonClass.time : '09:00 - 09:55',
+        subject: firstMonClass ? (firstMonClass.shortSubject || firstMonClass.subject) : 'Classes resume Monday morning',
+        faculty: firstMonClass ? firstMonClass.faculty : '—'
+      };
+
+      const currentClass = {
+        period: 'OFF',
+        time: 'Weekend',
+        subject: `Campus Closed (${dayInfo.actualDayName})`,
+        faculty: '—'
+      };
+
+      return { currentClass, nextClass, isWeekend: true, actualToday: dayInfo.actualDayName };
+    }
+
+    const todayName = weekdays[dayInfo.dayIndex - 1];
     const periods = timetable[todayName] || [];
     
-    let currentClass = { period: 'NONE', time: 'Recess', subject: isWeekday ? 'No lecture currently running' : 'Weekend (Classes resume Mon)', faculty: '—' };
+    let currentClass = { period: 'NONE', time: 'Recess', subject: 'No lecture currently running', faculty: '—' };
     let nextClass = { period: 'END', time: '--', subject: 'Classes concluded today', faculty: '—' };
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    if (isWeekday) {
-      for (let i = 0; i < periods.length; i++) {
-        const p = periods[i];
-        const match = p.time.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
-        if (match) {
-          const startMin = parseInt(match[1]) * 60 + parseInt(match[2]);
-          const endMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+    for (let i = 0; i < periods.length; i++) {
+      const p = periods[i];
+      const match = p.time.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+      if (match) {
+        const startMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+        const endMin = parseInt(match[3]) * 60 + parseInt(match[4]);
 
-          if (currentMinutes >= startMin && currentMinutes <= endMin) {
-            if (!p.isFree) {
-              currentClass = {
-                period: p.period,
-                time: p.time,
-                subject: p.shortSubject || p.subject,
-                faculty: p.faculty
-              };
-            }
-            // Look for next non-free class today
-            for (let j = i + 1; j < periods.length; j++) {
-              if (!periods[j].isFree) {
-                nextClass = {
-                  period: periods[j].period,
-                  time: periods[j].time,
-                  subject: periods[j].shortSubject || periods[j].subject,
-                  faculty: periods[j].faculty
-                };
-                break;
-              }
-            }
-            break;
-          } else if (currentMinutes < startMin) {
-            if (!p.isFree) {
+        if (currentMinutes >= startMin && currentMinutes <= endMin) {
+          if (!p.isFree) {
+            currentClass = {
+              period: p.period,
+              time: p.time,
+              subject: p.shortSubject || p.subject,
+              faculty: p.faculty
+            };
+          }
+          // Look for next non-free class today
+          for (let j = i + 1; j < periods.length; j++) {
+            if (!periods[j].isFree) {
               nextClass = {
-                period: p.period,
-                time: p.time,
-                subject: p.shortSubject || p.subject,
-                faculty: p.faculty
+                period: periods[j].period,
+                time: periods[j].time,
+                subject: periods[j].shortSubject || periods[j].subject,
+                faculty: periods[j].faculty
               };
               break;
             }
           }
+          break;
+        } else if (currentMinutes < startMin) {
+          if (!p.isFree) {
+            nextClass = {
+              period: p.period,
+              time: p.time,
+              subject: p.shortSubject || p.subject,
+              faculty: p.faculty
+            };
+            break;
+          }
         }
-      }
-    } else {
-      // Weekend -> point to Monday P1
-      const mon = timetable["Monday"] || [];
-      const first = mon.find(p => !p.isFree);
-      if (first) {
-        nextClass = {
-          period: `MON ${first.period}`,
-          time: first.time,
-          subject: first.shortSubject || first.subject,
-          faculty: first.faculty
-        };
       }
     }
 
-    return { currentClass, nextClass };
+    // If all classes concluded today, look for tomorrow or Monday
+    if (nextClass.period === 'END') {
+      const nextDayIdx = dayInfo.dayIndex; // e.g. Mon(1) -> Tue(weekdays[1])
+      if (nextDayIdx < 5) {
+        const nextDayName = weekdays[nextDayIdx];
+        const nextDayPeriods = timetable[nextDayName] || [];
+        const first = nextDayPeriods.find(p => !p.isFree);
+        if (first) {
+          nextClass = {
+            period: `${nextDayName.slice(0, 3).toUpperCase()} ${first.period}`,
+            time: first.time,
+            subject: first.shortSubject || first.subject,
+            faculty: first.faculty
+          };
+        }
+      } else {
+        const mon = timetable["Monday"] || [];
+        const first = mon.find(p => !p.isFree);
+        if (first) {
+          nextClass = {
+            period: `MON ${first.period}`,
+            time: first.time,
+            subject: first.shortSubject || first.subject,
+            faculty: first.faculty
+          };
+        }
+      }
+    }
+
+    return { currentClass, nextClass, isWeekend: false, actualToday: dayInfo.actualDayName };
   }
 
   function isPeriodCurrentlyActive(timeString) {
+    const d = new Date().getDay();
+    if (d === 0 || d === 6) return false; // Weekend periods are never active
     const match = timeString.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
     if (!match) return false;
     const now = new Date();
@@ -2126,11 +2216,16 @@
     const dayIndex = now.getDay(); // 0 = Sun, 1 = Mon, ..., 5 = Fri, 6 = Sat
     const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-    // Weekend
+    // Weekend (Saturday or Sunday)
     if (dayIndex === 0 || dayIndex === 6) {
       const mon = appState.timetableData["Monday"] || [];
       const first = mon.find(p => !p.isFree);
-      return first ? { label: `MON ${first.period} (${first.time})`, subject: `${first.shortSubject || first.subject} [${first.faculty}]` } : null;
+      return first ? {
+        isWeekend: true,
+        dayName: dayIndex === 6 ? 'Saturday' : 'Sunday',
+        label: `MON ${first.period} (${first.time})`,
+        subject: `${first.shortSubject || first.subject} [${first.faculty}]`
+      } : null;
     }
 
     const todayName = weekdays[dayIndex - 1];
@@ -2149,6 +2244,7 @@
           for (let j = i + 1; j < periods.length; j++) {
             if (!periods[j].isFree) {
               return {
+                isWeekend: false,
                 label: `${periods[j].period} (${periods[j].time})`,
                 subject: `${periods[j].shortSubject || periods[j].subject} [${periods[j].faculty}]`
               };
@@ -2158,6 +2254,7 @@
         } else if (currentMinutes < startMin) {
           if (!p.isFree) {
             return {
+              isWeekend: false,
               label: `${p.period} (${p.time})`,
               subject: `${p.shortSubject || p.subject} [${p.faculty}]`
             };
@@ -2174,6 +2271,7 @@
       const first = nextPeriods.find(p => !p.isFree);
       if (first) {
         return {
+          isWeekend: false,
           label: `TOMORROW ${first.period} (${first.time})`,
           subject: `${first.shortSubject || first.subject} [${first.faculty}]`
         };
@@ -2184,6 +2282,7 @@
       const first = mon.find(p => !p.isFree);
       if (first) {
         return {
+          isWeekend: true,
           label: `MON ${first.period} (${first.time})`,
           subject: `${first.shortSubject || first.subject} [${first.faculty}]`
         };
