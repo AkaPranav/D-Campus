@@ -67,6 +67,10 @@ error_source.html
 dataset/
 crops/
 unique_glyphs/
+templates.json
+image*.png
+test_*.png
+release_notes*.md
 
 # ------------------------------------------------------------------------------
 # 8. Raw UI Navigation Dumps & References
