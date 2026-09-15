@@ -1,5 +1,5 @@
 /**
- * COER Retro OS - Background Service Worker (Manifest V3)
+ * D-Campus - Background Service Worker (Manifest V3) (v1.4.0)
  * Handles background synchronization, API calls using native session cookies,
  * periodic alarms, and chrome.storage management.
  */
@@ -25,7 +25,7 @@ async function setupAlarms() {
       periodInMinutes: HEARTBEAT_INTERVAL_MINUTES,
       delayInMinutes: 0.2 // Initial pulse in ~12 seconds
     });
-    console.log(`[COER OS] Registered ${ALARM_SESSION_HEARTBEAT} alarm (every ${HEARTBEAT_INTERVAL_MINUTES} min).`);
+    console.log(`[D-Campus] Registered ${ALARM_SESSION_HEARTBEAT} alarm (every ${HEARTBEAT_INTERVAL_MINUTES} min).`);
   }
 
   // 2. Periodic Data Synchronization (every 15 minutes)
@@ -34,7 +34,7 @@ async function setupAlarms() {
       periodInMinutes: SYNC_INTERVAL_MINUTES,
       delayInMinutes: 1
     });
-    console.log(`[COER OS] Registered ${ALARM_PERIODIC_SYNC} alarm (every ${SYNC_INTERVAL_MINUTES} min).`);
+    console.log(`[D-Campus] Registered ${ALARM_PERIODIC_SYNC} alarm (every ${SYNC_INTERVAL_MINUTES} min).`);
   }
 }
 
@@ -45,7 +45,7 @@ async function setupAlarms() {
  */
 async function touchSession() {
   const timestamp = new Date().toISOString();
-  console.log(`[COER OS] 💓 Heartbeat pulse triggered at ${new Date().toLocaleTimeString()}...`);
+  console.log(`[D-Campus] 💓 Heartbeat pulse triggered at ${new Date().toLocaleTimeString()}...`);
 
   try {
     const res = await fetch('https://erp.coeruniversity.in/Account/GetStudentDetail', {
@@ -56,7 +56,7 @@ async function touchSession() {
     });
 
     if (!res.ok) {
-      console.warn(`[COER OS] Heartbeat pulse returned HTTP ${res.status}`);
+      console.warn(`[D-Campus] Heartbeat pulse returned HTTP ${res.status}`);
       await chrome.storage.local.set({
         sessionStatus: 'error',
         lastHeartbeat: timestamp,
@@ -91,7 +91,7 @@ async function touchSession() {
         section: (s.Section || '').trim()
       });
 
-      console.log(`[COER OS] 💓 Session kept alive for ${studentName} (${stuId}). Pulse #${nextCount}`);
+      console.log(`[D-Campus] 💓 Session kept alive for ${studentName} (${stuId}). Pulse #${nextCount}`);
       return {
         success: true,
         sessionStatus: 'active',
@@ -102,7 +102,7 @@ async function touchSession() {
         heartbeatCount: nextCount
       };
     } else {
-      console.log('[COER OS] Heartbeat: No active student session (logged out / awaiting login).');
+      console.log('[D-Campus] Heartbeat: No active student session (logged out / awaiting login).');
       await chrome.storage.local.set({
         sessionStatus: 'needs_login',
         lastHeartbeat: timestamp,
@@ -111,7 +111,7 @@ async function touchSession() {
       return { success: false, sessionStatus: 'needs_login' };
     }
   } catch (err) {
-    console.warn('[COER OS] Heartbeat network/offline exception:', err.message);
+    console.warn('[D-Campus] Heartbeat network/offline exception:', err.message);
     await chrome.storage.local.set({
       sessionStatus: 'offline',
       lastHeartbeat: timestamp,
@@ -124,7 +124,7 @@ async function touchSession() {
 
 // 1. Extension Lifecycle: onInstalled & onStartup
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[COER OS] Service Worker installed/updated. Reason:', details?.reason);
+  console.log('[D-Campus] Service Worker installed/updated. Reason:', details?.reason);
   await setupAlarms();
 
   if (details?.reason === 'install') {
@@ -148,32 +148,32 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     try {
       await syncAllData();
     } catch (e) {
-      console.warn('[COER OS] Initial sync skipped:', e);
+      console.warn('[D-Campus] Initial sync skipped:', e);
     }
   }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('[COER OS] Browser startup: verifying alarms & refreshing ERP session...');
+  console.log('[D-Campus] Browser startup: verifying alarms & refreshing ERP session...');
   await setupAlarms();
   try {
     await touchSession();
   } catch (e) {
-    console.warn('[COER OS] Startup session touch error:', e);
+    console.warn('[D-Campus] Startup session touch error:', e);
   }
 });
 
 // 2. Alarm Listener
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARM_SESSION_HEARTBEAT) {
-    console.log('[COER OS] 💓 Session keep-alive alarm triggered...');
+    console.log('[D-Campus] 💓 Session keep-alive alarm triggered...');
     await touchSession();
   } else if (alarm.name === ALARM_PERIODIC_SYNC) {
-    console.log('[COER OS] Scheduled background sync firing...');
+    console.log('[D-Campus] Scheduled background sync firing...');
     try {
       await syncAllData();
     } catch (err) {
-      console.error('[COER OS] Scheduled sync failed:', err);
+      console.error('[D-Campus] Scheduled sync failed:', err);
     }
   }
 });
@@ -204,7 +204,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const isDifferentStudent = stored.regId && stored.regId !== regId;
         
         if (isDifferentStudent) {
-          console.log(`[COER OS] Detected student account switch: ${stored.regId} -> ${regId}. Resetting cache...`);
+          console.log(`[D-Campus] Detected student account switch: ${stored.regId} -> ${regId}. Resetting cache...`);
           await chrome.storage.local.remove([
             'attendanceData',
             'assignmentData',
@@ -360,7 +360,7 @@ async function syncAllData(customRegId) {
       }
     }
   } catch (e) {
-    console.warn('[COER OS] Profile fetch warning:', e);
+    console.warn('[D-Campus] Profile fetch warning:', e);
   }
 
   // 2. Resolve RegID dynamically
@@ -370,14 +370,14 @@ async function syncAllData(customRegId) {
     : (profile?.regId || stored.regId || null);
 
   if (!regId) {
-    console.warn('[COER OS] Cannot sync: RegID not found. Awaiting student login on erp.coeruniversity.in');
+    console.warn('[D-Campus] Cannot sync: RegID not found. Awaiting student login on erp.coeruniversity.in');
     await chrome.storage.local.set({ syncStatus: 'needs_login' });
     return { success: false, reason: 'needs_login' };
   }
 
   // Detect student account switch and clear cache
   if (stored.regId && stored.regId !== regId) {
-    console.log(`[COER OS] Detected account switch: ${stored.regId} -> ${regId}. Resetting cache...`);
+    console.log(`[D-Campus] Detected account switch: ${stored.regId} -> ${regId}. Resetting cache...`);
     await chrome.storage.local.remove([
       'attendanceData',
       'assignmentData',
@@ -404,7 +404,7 @@ async function syncAllData(customRegId) {
     // Check if session has expired or redirected to login
     const contentType = attRes.headers.get('content-type') || '';
     if (attRes.redirected || contentType.includes('text/html')) {
-      console.warn('[COER OS] Session appears to be expired (HTML/Redirect received).');
+      console.warn('[D-Campus] Session appears to be expired (HTML/Redirect received).');
       await chrome.storage.local.set({ syncStatus: 'needs_login' });
       return { success: false, reason: 'session_expired' };
     }
@@ -450,7 +450,7 @@ async function syncAllData(customRegId) {
       };
     }
   } catch (e) {
-    console.warn('[COER OS] Attendance sync warning:', e);
+    console.warn('[D-Campus] Attendance sync warning:', e);
   }
 
   // 3. Fetch Assignments & Study Material API
@@ -530,7 +530,7 @@ async function syncAllData(customRegId) {
       };
     }
   } catch (e) {
-    console.warn('[COER OS] Assignment sync warning:', e);
+    console.warn('[D-Campus] Assignment sync warning:', e);
   }
 
   // 4. Fetch Timetable API
@@ -548,7 +548,7 @@ async function syncAllData(customRegId) {
       timetableData = parseTimetableJson(rawTimetableRows, enrolled, stored.selectedElectives || {});
     }
   } catch (e) {
-    console.warn('[COER OS] Timetable sync warning:', e);
+    console.warn('[D-Campus] Timetable sync warning:', e);
   }
 
   // 5. Store in local storage
@@ -578,7 +578,7 @@ async function syncAllData(customRegId) {
     });
   }
 
-  console.log('[COER OS] Sync complete:', {
+  console.log('[D-Campus] Sync complete:', {
     attendance: !!attendanceData,
     assignments: assignmentData?.totalAssignments,
     studyMaterials: assignmentData?.totalStudyMaterials,

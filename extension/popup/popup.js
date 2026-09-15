@@ -1,5 +1,5 @@
 /**
- * COER Retro OS - Popup Script
+ * D-Campus - Popup Script (v1.4.0)
  * Reads local storage data, formats KPI cards, and dispatches actions.
  */
 
@@ -78,12 +78,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function handleCalendarExport(openGoogleCal = true) {
     const data = await chrome.storage.local.get(['timetableData', 'studentName', 'stuId', 'regId']);
     if (!data.timetableData || !window.CoerCalendar) {
-      alert('Timetable data not found. Please log in or sync with ERP first.');
+      alert('Timetable data not found. Please log in or sync first.');
       return;
     }
 
-    const cleanName = (data.studentName || 'COER').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const filename = `COER_Timetable_${cleanName}.ics`;
+    const cleanName = (data.studentName || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `Timetable_${cleanName}.ics`;
 
     const res = window.CoerCalendar.generateIcs(data.timetableData, {
       studentName: data.studentName,
@@ -122,12 +122,134 @@ document.addEventListener('DOMContentLoaded', async () => {
       const hbBadge = document.getElementById('hb-badge');
       const hbTime = document.getElementById('hb-time');
       if (hbBadge) hbBadge.textContent = 'PULSING...';
-      if (hbTime) hbTime.textContent = 'Touching ERP session...';
+      if (hbTime) hbTime.textContent = 'Touching session...';
 
       chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' }, async () => {
         await loadAndRenderData();
       });
     });
+  }
+
+  // ==================== Auto-Login Settings & Header Toggle ====================
+  const autologinCard = document.getElementById('card-autologin');
+  const autologinHeader = document.getElementById('autologin-accordion-header');
+  const userInput = document.getElementById('erp-user');
+  const passInput = document.getElementById('erp-pass');
+  const autoLoginToggle = document.getElementById('auto-login-toggle');
+  const passEyeBtn = document.getElementById('btn-toggle-pass');
+  const saveStatus = document.getElementById('save-status');
+
+  // Load stored credentials & accordion state
+  const saved = await chrome.storage.local.get(['erp_user', 'erp_password', 'auto_login_enabled', 'autologin_open']);
+  if (userInput) userInput.value = saved.erp_user || '';
+  if (passInput) passInput.value = saved.erp_password || '';
+  if (autoLoginToggle) autoLoginToggle.checked = !!saved.auto_login_enabled;
+
+  // Set initial accordion open/close state (default open for easy credential access)
+  const shouldBeOpen = saved.autologin_open !== undefined
+    ? !!saved.autologin_open
+    : true;
+
+  if (autologinCard && shouldBeOpen) {
+    autologinCard.classList.add('open');
+  }
+
+  if (autologinHeader && autologinCard) {
+    autologinHeader.addEventListener('click', (e) => {
+      // Don't toggle accordion if clicking on the toggle switch or its label
+      if (e.target.closest('.retro-toggle') || e.target.closest('#autologin-toggle-container')) {
+        return;
+      }
+      const isOpen = autologinCard.classList.toggle('open');
+      chrome.storage.local.set({ autologin_open: isOpen });
+      if (isOpen) {
+        setTimeout(() => {
+          autologinCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 100);
+      }
+    });
+    autologinHeader.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        autologinHeader.click();
+      }
+    });
+  }
+
+  // Toggle password visibility
+  if (passEyeBtn) {
+    passEyeBtn.addEventListener('click', () => {
+      const isHidden = passInput.type === 'password';
+      passInput.type = isHidden ? 'text' : 'password';
+      passEyeBtn.textContent = isHidden ? '🙈' : '👁';
+    });
+  }
+
+  // Save credentials on change
+  let saveTimer = null;
+  const saveCredentials = async (showToast = true) => {
+    const creds = {
+      erp_user: (userInput ? userInput.value : '').trim(),
+      erp_password: passInput ? passInput.value : '',
+      auto_login_enabled: autoLoginToggle ? autoLoginToggle.checked : false
+    };
+    await chrome.storage.local.set(creds);
+
+    // Notify active ERP tabs immediately so live page auto-fills/solves without reload
+    try {
+      chrome.tabs.query({ url: '*://erp.coeruniversity.in/*' }, (tabs) => {
+        if (tabs && tabs.length) {
+          tabs.forEach(t => {
+            chrome.tabs.sendMessage(t.id, { type: 'CREDENTIALS_UPDATED', creds }).catch(() => {});
+          });
+        }
+      });
+    } catch (e) {}
+
+    if (saveStatus) {
+      if (creds.erp_user && creds.erp_password) {
+        saveStatus.textContent = creds.auto_login_enabled ? '✓ SAVED — ARMED' : '✓ SAVED (AUTO-LOGIN OFF)';
+        saveStatus.className = 'save-status saved';
+      } else {
+        saveStatus.textContent = creds.auto_login_enabled ? '⚠ ENTER STUDENT ID & PASS' : '';
+        saveStatus.className = 'save-status warn';
+      }
+      if (showToast) {
+        setTimeout(() => {
+          if (saveStatus.textContent.includes('✓') || saveStatus.textContent.includes('⚠')) {
+            saveStatus.textContent = creds.auto_login_enabled && creds.erp_user && creds.erp_password
+              ? 'STATUS: AUTO-LOGIN ARMED' : (creds.erp_user && creds.erp_password ? 'STATUS: AUTO-LOGIN OFF' : '');
+          }
+        }, 2600);
+      }
+    }
+  };
+
+  if (userInput && passInput) {
+    const scheduleSave = () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveCredentials(true), 200);
+    };
+    userInput.addEventListener('input', scheduleSave);
+    passInput.addEventListener('input', scheduleSave);
+    userInput.addEventListener('change', () => saveCredentials(true));
+    passInput.addEventListener('change', () => saveCredentials(true));
+    userInput.addEventListener('blur', () => saveCredentials(true));
+    passInput.addEventListener('blur', () => saveCredentials(true));
+  }
+  if (autoLoginToggle) {
+    autoLoginToggle.addEventListener('change', () => saveCredentials(true));
+  }
+
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(saveTimer);
+    saveCredentials(false);
+  });
+
+  // Initialize save-status display on open
+  if (saveStatus && saved.erp_user && saved.erp_password) {
+    saveStatus.textContent = saved.auto_login_enabled ? 'STATUS: AUTO-LOGIN ARMED' : 'STATUS: AUTO-LOGIN OFF';
+    saveStatus.className = 'save-status saved';
   }
 });
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "COER Retro OS - Modern ERP Suite",
-  "version": "1.2.0",
-  "description": "Unified retro-dark dashboard syncing Attendance, Priority Assignments, Timetable Calendar, and continuous Keep-Alive Heartbeat.",
+  "name": "D-Campus - Modern Student Suite",
+  "version": "1.4.0",
+  "description": "Unified retro-dark student dashboard (D-Campus) syncing Attendance, Assignments, Timetable, 24/7 Keep-Alive Heartbeat, and Native On-Device CAPTCHA Auto-Login.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -10,7 +10,7 @@
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "COER Retro OS Portal",
+    "default_title": "D-Campus Portal",
     "default_icon": {
       "16": "icons/icon-16.png",
       "48": "icons/icon-48.png",
@@ -31,7 +31,7 @@
   "content_scripts": [
     {
       "matches": ["https://erp.coeruniversity.in/*"],
-      "js": ["utils/calendar.js", "content/content.js"],
+      "js": ["utils/calendar.js", "utils/captcha_solver.js", "content/content.js"],
       "run_at": "document_idle"
     }
   ],

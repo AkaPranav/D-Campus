@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>COER Retro OS</title>
+  <title>D-Campus</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -10,7 +10,7 @@
     <!-- Window Bar -->
     <div class="window-bar">
       <div class="window-title">
-        <span class="badge-logo">COER-OS</span>
+        <span class="badge-logo">D-CAMPUS</span>
         <span>PORTAL HUD</span>
       </div>
       <div class="window-dots">
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Keep-Alive Heartbeat Banner -->
-    <div class="heartbeat-bar" id="heartbeat-bar" title="Auto-refreshes ERP session every 5 minutes in background to prevent logout & CAPTCHA re-prompts">
+    <div class="heartbeat-bar" id="heartbeat-bar" title="Auto-refreshes session every 5 minutes in background to prevent logout & CAPTCHA re-prompts">
       <div class="hb-left">
         <span class="hb-pulse-heart" id="hb-icon">💓</span>
         <span class="hb-title">SESSION:</span>
@@ -92,6 +92,40 @@
           <div class="asg-empty">No urgent deadlines pending.</div>
         </div>
       </div>
+
+      <!-- Auto-Login Settings Card -->
+      <div class="mini-card" id="card-autologin">
+        <div class="mini-card-header autologin-header" id="autologin-accordion-header" role="button" tabindex="0" title="Click to expand/collapse auto-login credentials">
+          <div class="autologin-header-left">
+            <span class="accordion-chevron" id="autologin-chevron">▼</span>
+            <span>🔐 AUTO-LOGIN SETUP</span>
+          </div>
+          <div class="autologin-header-right" id="autologin-toggle-container">
+            <label class="retro-toggle" title="Toggle Auto-Login On/Off">
+              <input type="checkbox" id="auto-login-toggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="autologin-dropdown-content" id="autologin-dropdown-content">
+          <div class="autologin-form">
+            <div class="autologin-fields-row">
+              <div class="input-group">
+                <label for="erp-user">Student ID</label>
+                <input type="text" id="erp-user" placeholder="CU24025XXXX" autocomplete="off">
+              </div>
+              <div class="input-group">
+                <label for="erp-pass">Password</label>
+                <div class="pass-wrapper">
+                  <input type="password" id="erp-pass" placeholder="••••••••" autocomplete="off">
+                  <button id="btn-toggle-pass" type="button" class="mini-btn-link pass-eye" title="Toggle password visibility">👁</button>
+                </div>
+              </div>
+            </div>
+            <div id="save-status" class="save-status"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Footer Controls -->
@@ -99,7 +133,7 @@
       <button class="retro-btn retro-btn-chai" id="btn-popup-chai" title="Fuel the developer with a Chai ☕">☕ CHAI</button>
       <button class="retro-btn retro-btn-gold" id="btn-sync-now">⚡ SYNC</button>
       <button class="retro-btn retro-btn-emerald" id="btn-export-cal" title="Sync schedule to Google Calendar">📅 CALENDAR</button>
-      <button class="retro-btn retro-btn-cyan" id="btn-open-erp">🖥 OPEN ERP</button>
+      <button class="retro-btn retro-btn-cyan" id="btn-open-erp">🖥 OPEN PORTAL</button>
     </div>
 
     <!-- Chai Modal Overlay in Popup -->
@@ -110,7 +144,7 @@
           <span class="popup-dot close" id="btn-close-popup-chai">✕</span>
         </div>
         <div class="popup-chai-body">
-          <div class="popup-chai-tag">Fueling COER Retro OS with Chai ☕</div>
+          <div class="popup-chai-tag">Fueling D-Campus with Chai ☕</div>
           <div class="popup-upi-box">
             <span class="popup-upi-label">UPI:</span>
             <span class="popup-upi-val" id="popup-upi-val">6396950805@slc</span>

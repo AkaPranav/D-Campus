@@ -1,5 +1,5 @@
 # ==============================================================================
-# COER Retro OS - Git Ignore Rules
+# D-Campus - Git Ignore Rules
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -58,12 +58,15 @@ chromedriver-linux64/
 *.tgz
 
 # ------------------------------------------------------------------------------
-# 7. Temporary Test Captchas & Error Dumps
+# 7. Temporary Test Captchas, OCR Datasets & Error Dumps
 # ------------------------------------------------------------------------------
 captcha.png
 current_captcha.png
 error_screenshot.png
 error_source.html
+dataset/
+crops/
+unique_glyphs/
 
 # ------------------------------------------------------------------------------
 # 8. Raw UI Navigation Dumps & References

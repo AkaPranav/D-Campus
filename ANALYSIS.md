@@ -1,4 +1,4 @@
-# 📊 Technical & Quantitative Impact Analysis: COER Retro OS vs. Legacy ERP
+# 📊 Technical & Quantitative Impact Analysis: D-Campus vs. Legacy ERP (v1.4.0)
 
 [![Documentation](https://img.shields.io/badge/Documentation-README.md-4285F4?style=for-the-badge&logo=readme&logoColor=white)](./README.md)
 [![Privacy Policy](https://img.shields.io/badge/Privacy_Policy-100%25_On--Device-10b981?style=for-the-badge)](./PRIVACY_POLICY.md)
@@ -13,7 +13,7 @@
 
 ## 📌 Executive Summary
 
-This document provides an objective, mathematically rigorous engineering analysis of the **COER University ERP portal architecture (`erp.coeruniversity.in`)**, the technical root causes of portal downtime during peak institutional events (such as semester result announcements and assignment deadlines), how the **COER Retro OS client-side augmentation suite** reshapes network and server load dynamics, and a balanced evaluation of the trade-offs (Pros & Cons).
+This document provides an objective, mathematically rigorous engineering analysis of the **COER University ERP portal architecture (`erp.coeruniversity.in`)**, the technical root causes of portal downtime during peak institutional events (such as semester result announcements and assignment deadlines), how the **D-Campus client-side augmentation suite** reshapes network and server load dynamics, and a balanced evaluation of the trade-offs (Pros & Cons).
 
 > [!NOTE]
 > All quantitative metrics and payload calculations documented below are derived from direct HTTP network traces, DOM inspections, and empirical measurements taken on the live production portal.
@@ -65,7 +65,7 @@ To evaluate how the extension alters resource consumption, we compare actual HTT
 
 ### 2.1 Single-Interaction Payload Breakdown (Grounded Measurements)
 
-| Academic Action | Legacy ERP Portal Workflow | COER Retro OS Extension | Efficiency Gain |
+| Academic Action | Legacy ERP Portal Workflow | D-Campus Extension | Efficiency Gain |
 | :--- | :--- | :--- | :--- |
 | **Timetable Schedule Lookup** | Navigates to `/Cyborg_StudentTimeTable`: Downloads HTML (~120 KB) + scripts & styles (~1.5 MB uncompressed assets) = **~1.6 MB** | Serves from `chrome.storage.local` memory cache: **0 KB** network transfer (Background sync payload: **~6.2 KB JSON**) | **>99.6% reduction** |
 | **Active Assignments Check** | Loads `/Cyborg_StudentAssignment`: Full page layout + jqGrid DOM wrappers = **~380 KB** | Directly calls `/Web_StudentAcademic/GetStudentAssignment`: **~22 KB JSON** | **~94.2% reduction** |
@@ -87,7 +87,7 @@ To model the real-world impact accurately, consider a conservative cohort of **1
 * **Server Request Impact:** 20,000 full-page HTML navigations hitting the IIS application pool.
 * **Network Bandwidth Consumed:** 20,000 × 1.6 MB = **~32 Gigabytes of server bandwidth per week** expended solely on displaying static class periods.
 
-### 🟢 Scenario B: With COER Retro OS (Local Cache & Google Calendar Sync)
+### 🟢 Scenario B: With D-Campus (Local Cache & Google Calendar Sync)
 * **Extension Cached Queries:** The student checks the timetable via the extension popup or in-page HUD. The schedule is loaded instantly from browser storage: **0 requests dispatched to the server**.
 * **Google Calendar Sync Impact:** Once a student clicks **"Sync to Google Calendar"** and imports the generated `.ics` file:
   * Google Calendar permanently stores the recurring weekly schedule on Google Cloud.
@@ -175,7 +175,7 @@ An honest evaluation requires examining both the benefits and the potential risk
 
 ## 6. Conclusion & Strategic Recommendations
 
-The technical evidence demonstrates that **COER Retro OS operates as an effective client-side caching proxy and optimization layer**. By replacing redundant multi-megabyte HTML view renders with micro-payload JSON exchanges and local browser caching, widespread student adoption directly reduces pressure on the university's IIS web servers.
+The technical evidence demonstrates that **D-Campus operates as an effective client-side caching proxy and optimization layer**. By replacing redundant multi-megabyte HTML view renders with micro-payload JSON exchanges and local browser caching, widespread student adoption directly reduces pressure on the university's IIS web servers.
 
 ### Recommended Next Steps for Sustainable Operation:
 * **Adopt Exponential Backoff:** When the ERP server returns HTTP 500 or 503 errors during result announcements, the extension should pause background sync attempts for 30 minutes rather than retrying, preventing thundering-herd effects.

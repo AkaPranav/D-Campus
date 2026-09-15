@@ -1,11 +1,10 @@
 /**
- * COER Retro OS - Master Content Script (Manifest V3)
+ * D-Campus - Master Content Script (Manifest V3) (v1.4.0)
  * Scoped inside isolated Shadow DOM to avoid ERP CSS bleeding.
  * Implements:
  * 1. Floating Tactical HUD launcher & Quick Hotkey (Alt+C)
  * 2. Unified 3-Module Dashboard: Attendance Gauge, Timetable Schedule, Priority Assignments
  * 3. Irreversible Single-Submission Safety Shield Modal
- * 4. Automatic In-Page Feedback Gate Auto-Rating Bar
  */
 
 (function () {
@@ -15,7 +14,7 @@
   if (window.__coerRetroOsInjected) return;
   window.__coerRetroOsInjected = true;
 
-  console.log('[COER OS] Initializing Retro OS Suite...');
+  console.log('[D-Campus] Initializing D-Campus Suite...');
 
   // State
   let appState = {
@@ -58,17 +57,17 @@
   // 3. Inject Floating Launcher Button
   const triggerBtn = document.createElement('div');
   triggerBtn.id = 'coer-hud-trigger';
-  triggerBtn.title = 'Open COER Retro OS Dashboard (Alt+C)';
+  triggerBtn.title = 'Open D-Campus Dashboard (Alt+C)';
   triggerBtn.innerHTML = `
     <span class="hud-pulse-dot"></span>
-    <span>⚡ COER OS // v2.0</span>
+    <span>⚡ D-CAMPUS // v1.4.0</span>
   `;
   shadow.appendChild(triggerBtn);
 
   // 3b. Inject Persistent Floating Chai Corner Button (Stays in corner)
   const chaiCornerBtn = document.createElement('div');
   chaiCornerBtn.id = 'coer-chai-corner-btn';
-  chaiCornerBtn.title = 'Buy Developer a Chai ☕ // Support COER Retro OS';
+  chaiCornerBtn.title = 'Buy Developer a Chai ☕ // Support D-Campus';
   chaiCornerBtn.innerHTML = `
     <span class="chai-icon-anim">☕</span>
     <span>BUY ME A CHAI</span>
@@ -83,8 +82,8 @@
       <!-- Window Title Bar -->
       <div class="retro-window-bar">
         <div class="retro-window-title">
-          <span class="logo-brand">COER-OS</span>
-          <span id="retro-window-title-text">STUDENT TERMINAL // v2.0.4</span>
+          <span class="logo-brand">D-CAMPUS</span>
+          <span id="retro-window-title-text">STUDENT TERMINAL // v1.4.0</span>
         </div>
         <div class="retro-window-controls">
           <button class="retro-btn retro-btn-gold retro-btn-sm" id="btn-global-sync">⚡ SYNC DATA</button>
@@ -125,15 +124,15 @@
       <!-- View Content Container -->
       <div class="retro-content-container" id="retro-content-view">
         <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-family:var(--font-mono);">
-          ⚡ INITIALIZING RETRO OS...
+          ⚡ INITIALIZING D-CAMPUS...
         </div>
       </div>
 
       <!-- Retro Window Footer Bar -->
       <div class="retro-window-footer">
         <div class="retro-footer-left">
-          <span class="retro-footer-tag">COER RETRO OS</span>
-          <span class="retro-footer-text">v1.2.0 • ALL SYSTEMS OPERATIONAL</span>
+          <span class="retro-footer-tag">D-CAMPUS</span>
+          <span class="retro-footer-text">v1.4.0 • ALL SYSTEMS OPERATIONAL</span>
         </div>
         <div class="retro-footer-right">
           <button class="retro-chai-corner-btn" id="btn-dashboard-corner-chai" title="Support developer with a Chai ☕">
@@ -370,7 +369,7 @@
       }
     }
 
-    // 3. Student ID (e.g. CU240250963)
+    // 3. Student ID (e.g. CU24025XXXX)
     const stuIdEl = document.querySelector('#stuID');
     const stuMatch = html.match(/CU\d+/i);
     const stuId = (stuIdEl && stuIdEl.textContent && stuIdEl.textContent.trim().length > 0)
@@ -418,7 +417,7 @@
         if (appState.studentName) {
           titleEl.textContent = `${appState.studentName.toUpperCase()} ${appState.stuId ? '• ' + appState.stuId : ''}`;
         } else {
-          titleEl.textContent = 'STUDENT TERMINAL // v2.0.4';
+          titleEl.textContent = 'STUDENT TERMINAL // v1.4.0';
         }
       }
 
@@ -436,7 +435,7 @@
       updateTicker();
       renderCurrentView();
     } catch (e) {
-      console.warn('[COER OS] Error loading storage:', e);
+      console.warn('[D-CAMPUS] Error loading storage:', e);
     }
   }
 
@@ -459,7 +458,7 @@
         renderCurrentView();
       }
     } catch (e) {
-      console.warn('[COER OS] Direct timetable fetch warning:', e);
+      console.warn('[D-CAMPUS] Direct timetable fetch warning:', e);
     }
   }
 
@@ -615,7 +614,7 @@
     const syncBtn = shadow.getElementById('btn-global-sync');
     syncBtn.disabled = true;
     syncBtn.textContent = '⏳ SYNCING...';
-    showToast('Synchronizing ERP modules...', 'info');
+    showToast('Synchronizing modules...', 'info');
 
     try {
       const student = detectStudentContext();
@@ -625,7 +624,7 @@
       if (!targetRegId) {
         syncBtn.disabled = false;
         syncBtn.textContent = '⚡ SYNC DATA';
-        showToast('Please log in to your COER ERP account first', 'warning');
+        showToast('Please log in to your account first', 'warning');
         return;
       }
 
@@ -698,7 +697,7 @@
         hbEl.title = 'Keep-Alive Heartbeat: Active. Background pulse resets 20-min session timeout every 5 minutes.';
       } else if (appState.sessionStatus === 'needs_login' || !appState.regId) {
         hbEl.innerHTML = '🔒 SESSION: <strong style="color:var(--accent-gold)">LOGIN REQ</strong>';
-        hbEl.title = 'Please log in to your ERP account to activate session keep-alive.';
+        hbEl.title = 'Please log in to your portal account to activate session keep-alive.';
       } else {
         hbEl.innerHTML = '⚠️ SESSION: <strong style="color:var(--accent-rose)">EXPIRED</strong>';
         hbEl.title = 'Session timed out. Re-authentication required.';
@@ -1215,7 +1214,7 @@
           </div>
           <div class="now-title">Weekend — No Classes Scheduled</div>
           <div class="now-detail">
-            COER operates Monday to Friday. Classes resume Monday morning.
+            Campus operates Monday to Friday. Classes resume Monday morning.
           </div>
         </div>
 
@@ -1466,7 +1465,7 @@
 
           <div class="safety-modal-body">
             <div class="safety-alert-banner">
-              <strong>CRITICAL COER POLICY WARNING:</strong> Submitting an answer on COER ERP is strictly irreversible. Once you upload your file, the portal permanently locks your record. Re-submissions, replacements, or edits are NOT allowed by the server.
+              <strong>CRITICAL SUBMISSION WARNING:</strong> Submitting an answer on the portal is strictly irreversible. Once you upload your file, the system permanently locks your record. Re-submissions, replacements, or edits are NOT allowed by the server.
             </div>
 
             <table class="safety-meta-table">
@@ -1487,7 +1486,7 @@
             <!-- Mandatory Verification Checkbox -->
             <label class="safety-checkbox-label">
               <input type="checkbox" id="safety-confirm-checkbox">
-              <span>I verify that this document is my complete and final answer. I understand that COER ERP will reject any re-upload attempts.</span>
+              <span>I verify that this document is my complete and final answer. I understand that the portal will reject any re-upload attempts.</span>
             </label>
           </div>
 
@@ -1669,7 +1668,7 @@
               <div class="cal-step-row">
                 <div class="cal-step-num">1</div>
                 <div class="cal-step-content">
-                  <strong>Download Schedule File:</strong> Click <em>"Download .ics"</em> below to save your personalized COER timetable.
+                  <strong>Download Schedule File:</strong> Click <em>"Download .ics"</em> below to save your personalized timetable.
                   <div class="cal-step-desc">Compatible with Google Calendar, Apple Calendar, Outlook & Android.</div>
                 </div>
               </div>
@@ -1714,8 +1713,8 @@
 
     function executeExport(openCalendarTab = false) {
       const reminderMin = parseInt(reminderSelect.value, 10);
-      const cleanName = (studentName || 'COER').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = `COER_Timetable_${cleanName}.ics`;
+      const cleanName = (studentName || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Timetable_${cleanName}.ics`;
 
       const res = window.CoerCalendar.generateIcs(tt, {
         studentName,
@@ -1771,7 +1770,7 @@
           <div class="chai-modal-header">
             <div class="chai-modal-title">
               <span class="chai-icon-anim">☕</span>
-              <span>${isFirstTime ? 'WELCOME TO COER RETRO OS // BUY ME A CHAI' : 'BUY ME A CHAI // SUPPORT DEVELOPER'}</span>
+              <span>${isFirstTime ? 'WELCOME TO D-CAMPUS // BUY ME A CHAI' : 'BUY ME A CHAI // SUPPORT DEVELOPER'}</span>
             </div>
             <span class="retro-dot close" id="btn-close-chai-modal" title="Close (ESC)"></span>
           </div>
@@ -1783,9 +1782,9 @@
                 <span class="chai-big-icon">☕</span>
               </div>
               <div class="chai-hero-text">
-                <h4>${isFirstTime ? 'Hey there, fellow COERian! 👋' : 'Fueling code & servers with Chai! ☕'}</h4>
+                <h4>${isFirstTime ? 'Hey there, fellow Student! 👋' : 'Fueling code & servers with Chai! ☕'}</h4>
                 <p>
-                  COER Retro OS was built with love, late-night reverse engineering, and LOTS of chai — to rescue you from compulsory 180 feedback locks, 20-minute logouts, and slow tables.
+                  D-Campus was built with love, late-night reverse engineering, and LOTS of chai — to rescue you from compulsory 180 feedback locks, 20-minute logouts, and slow tables.
                 </p>
                 <div class="chai-hero-subtag">
                   If this extension saved your attendance or sanity today, consider buying me a cutting chai!
@@ -1856,7 +1855,7 @@
             <button class="retro-btn retro-btn-ghost retro-btn-sm" id="btn-dismiss-chai">
               ${isFirstTime ? '✓ LET\'S GO TO DASHBOARD' : 'MAYBE LATER'}
             </button>
-            <a href="upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=20&cu=INR&tn=COER%20Retro%20OS%20Chai" class="retro-btn retro-btn-emerald retro-btn-sm" id="btn-intent-upi" target="_blank">
+            <a href="upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=20&cu=INR&tn=D-Campus%20Chai" class="retro-btn retro-btn-emerald retro-btn-sm" id="btn-intent-upi" target="_blank">
               🚀 PAY VIA UPI APP
             </a>
           </div>
@@ -1885,7 +1884,7 @@
         }
       });
       noteEl.innerHTML = `Amount: <strong>₹${amt}</strong> • Payee: <strong>${payeeName}</strong>`;
-      intentBtn.href = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=COER%20Retro%20OS%20Chai`;
+      intentBtn.href = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=D-Campus%20Chai`;
     }
 
     chips.forEach(chip => {
@@ -1926,7 +1925,7 @@
       chrome.storage.local.set({ hasSeenChaiModal: true });
       closeChaiModal();
       if (isFirstTime) {
-        showToast('Enjoy COER Retro OS! You can find "Buy me a Chai" in the corner anytime ☕', 'success');
+        showToast('Enjoy D-Campus! You can find "Buy me a Chai" in the corner anytime ☕', 'success');
       }
     }
 
@@ -1984,87 +1983,7 @@
     });
   }
 
-  // ----------------------------------------------------------------
-  // IN-ERP COMPULSORY ATTENDANCE GATE HELPER
-  // ----------------------------------------------------------------
-  function checkAndInjectAttendanceGateBar() {
-    const feedbackGrid = document.getElementById('gbox_tblfeedBack');
-    if (feedbackGrid && !document.getElementById('coer-retro-feedback-bar')) {
-      console.log('[COER OS] Detected Attendance Feedback Gate. Injecting 1-Click Auto-Rating Bar...');
-      
-      const bar = document.createElement('div');
-      bar.id = 'coer-retro-feedback-bar';
-      bar.style.cssText = `
-        background: #11151e;
-        border: 2px solid #fbbf24;
-        color: #f8fafc;
-        padding: 12px 18px;
-        margin: 15px 0;
-        border-radius: 6px;
-        box-shadow: 4px 4px 0 #000;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-family: 'Space Grotesk', -apple-system, sans-serif;
-      `;
 
-      bar.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:16px;">⚡</span>
-          <div>
-            <strong style="color:#fbbf24; font-size:13px; letter-spacing:0.05em;">COER-OS // BATCH RATING CONTROL BAR</strong>
-            <div style="font-size:11px; color:#94a3b8;">Batch-rate all 14 professors in 1-click to bypass compulsory gate</div>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="display:flex; gap:6px;">
-            <button type="button" class="coer-rate-all" data-rate="Xlnt" style="background:#10b981; color:#000; border:1.5px solid #000; padding:6px 12px; font-weight:800; border-radius:4px; cursor:pointer; box-shadow:2px 2px 0 #000;">★ All Xlnt</button>
-            <button type="button" class="coer-rate-all" data-rate="Good" style="background:#06b6d4; color:#000; border:1.5px solid #000; padding:6px 12px; font-weight:800; border-radius:4px; cursor:pointer; box-shadow:2px 2px 0 #000;">All Good</button>
-            <button type="button" class="coer-rate-all" data-rate="Avg"  style="background:#fbbf24; color:#000; border:1.5px solid #000; padding:6px 12px; font-weight:800; border-radius:4px; cursor:pointer; box-shadow:2px 2px 0 #000;">All Avg</button>
-            <button type="button" class="coer-rate-all" data-rate="Poor" style="background:#f43f5e; color:#fff; border:1.5px solid #000; padding:6px 12px; font-weight:800; border-radius:4px; cursor:pointer; box-shadow:2px 2px 0 #000;">All Poor</button>
-          </div>
-          <button type="button" id="coer-save-feedback-btn" style="background:#10b981; color:#000; border:2px solid #000; padding:8px 16px; font-weight:800; border-radius:5px; cursor:pointer; box-shadow:3px 3px 0 #000;">
-            💾 SAVE & UNLOCK ATTENDANCE
-          </button>
-        </div>
-      `;
-
-      feedbackGrid.parentNode.insertBefore(bar, feedbackGrid);
-
-      // Event listener for rating all
-      bar.querySelectorAll('.coer-rate-all').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const rating = btn.dataset.rate;
-          batchRateAllProfessors(rating);
-        });
-      });
-
-      bar.querySelector('#coer-save-feedback-btn').addEventListener('click', () => {
-        const btnSave = document.getElementById('btnSave');
-        if (btnSave) btnSave.click();
-      });
-    }
-  }
-
-  function batchRateAllProfessors(ratingName) {
-    if (window.$ && window.$('#tblfeedBack').length) {
-      const rowIds = window.$('#tblfeedBack').jqGrid('getDataIDs') || [];
-      rowIds.forEach(rId => {
-        const subgrid = window.$(`#tblfeedBack_${rId}_t`);
-        if (subgrid.length) {
-          const radios = subgrid.find(`input[type='radio'][id$='_${ratingName}']`);
-          radios.each(function () {
-            this.checked = true;
-            window.$(this).trigger('change');
-          });
-        }
-      });
-      showToast(`Selected "${ratingName}" for all faculty topics! Click Save to submit.`, 'success');
-    }
-  }
-
-  // Periodic check for dynamic ERP subgrid renders
-  setInterval(checkAndInjectAttendanceGateBar, 1500);
 
   // ----------------------------------------------------------------
   // TIMETABLE UTILITY HELPERS
@@ -2292,39 +2211,180 @@
     return null;
   }
 
-  // Auto-detect student identity and sync if on an authenticated page
-  async function checkAndSyncStudentSession() {
-    const path = window.location.pathname.toLowerCase();
-    
-    // Login page helper: autofocus cursor intelligently & assist autofill
-    if (path === '/' || path.includes('/account/login')) {
-      const focusCaptchaIfReady = () => {
+  // ----------------------------------------------------------------
+  // AUTO-LOGIN ENGINE: Universal CAPTCHA Solver + Credential Fill + Submit Guard
+  // ----------------------------------------------------------------
+  let captchaObserverAttached = false;
+
+  function runAutoLogin(force = false) {
+    const finish = (msg, type = 'info') => {
+      try { showToast(msg, type); } catch (e) {}
+    };
+
+    // Check if the server rendered a login error on previous submission
+    const errorBox = document.querySelector('.validation-summary-errors, .field-validation-error');
+    const isLoginErrorPresent = !!(errorBox && errorBox.innerText && errorBox.innerText.trim().length > 0);
+
+    // 1. Read stored credentials & settings
+    chrome.storage.local.get(['erp_user', 'erp_password', 'auto_login_enabled'], (stored) => {
+      const user = (stored.erp_user || '').trim();
+      const pass = stored.erp_password || '';
+      const autoSubmit = !!stored.auto_login_enabled && !isLoginErrorPresent;
+
+      if (isLoginErrorPresent && !force) {
+        const errText = errorBox.innerText.trim().replace(/\s+/g, ' ');
+        finish(`⚠ LOGIN FAILED: ${errText} — Check credentials in Extension Popup`, 'error');
+      }
+
+      // 2. Locate DOM elements (retry with exponential backoff up to 12s)
+      const tryFill = (attempt) => {
         const userInp = document.getElementById('UserName');
         const passInp = document.getElementById('Password');
         const capInp = document.getElementById('captcha');
-        if (userInp && passInp && capInp) {
-          if (userInp.value && passInp.value && !capInp.value) {
-            capInp.focus();
-            return true;
-          } else if (!userInp.value) {
-            userInp.focus();
+        const capImg = document.getElementById('imgPhoto') || document.querySelector('img[src*="data:image"]') || document.getElementById('canvas');
+
+        // Form inputs must exist
+        if (!userInp || !passInp || !capInp) {
+          if (attempt < 48) {
+            setTimeout(() => tryFill(attempt + 1), 250);
+          } else {
+            finish('D-Campus: Login inputs not found.', 'error');
           }
+          return;
         }
-        return false;
+
+        // Safe value setter dispatching synthetic React/jQuery events
+        const setVal = (el, val) => {
+          if (!el) return;
+          try {
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            setter.call(el, val);
+          } catch (e) {
+            el.value = val;
+          }
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        // Autofill credentials if configured
+        if (user && (force || !userInp.value || userInp.value !== user)) {
+          setVal(userInp, user);
+        }
+        if (pass && (force || !passInp.value)) {
+          setVal(passInp, pass);
+        }
+
+        // Wait for dynamic CAPTCHA image to finish rendering
+        const isImgReady = capImg && (
+          (capImg.src && !capImg.src.includes('whitey.jpg') && capImg.src.length > 50) ||
+          (capImg.tagName === 'CANVAS' && capImg.width > 0)
+        );
+
+        if (!isImgReady) {
+          if (attempt < 48) {
+            setTimeout(() => tryFill(attempt + 1), 250);
+          } else {
+            finish('D-Campus: CAPTCHA image timed out.', 'error');
+          }
+          return;
+        }
+
+        // Attach MutationObserver to #imgPhoto so re-clicking refresh re-solves immediately
+        if (capImg && !captchaObserverAttached && window.MutationObserver) {
+          captchaObserverAttached = true;
+          const obs = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+              if (m.attributeName === 'src') {
+                const newSrc = capImg.src || '';
+                if (newSrc && !newSrc.includes('whitey.jpg') && newSrc.length > 50) {
+                  // Re-solve dynamic new image
+                  setTimeout(() => solveAndPopulateCaptcha(capImg, capInp, setVal, finish, false), 150);
+                  break;
+                }
+              }
+            }
+          });
+          obs.observe(capImg, { attributes: true, attributeFilter: ['src'] });
+        }
+
+        // 3. Solve CAPTCHA using on-device engine
+        solveAndPopulateCaptcha(capImg, capInp, setVal, finish, autoSubmit);
       };
 
-      if (!focusCaptchaIfReady()) {
-        setTimeout(focusCaptchaIfReady, 300);
-        setTimeout(focusCaptchaIfReady, 800);
-        setTimeout(focusCaptchaIfReady, 1500);
+      tryFill(0);
+    });
+  }
+
+  // Pure on-device CAPTCHA solver and filler
+  function solveAndPopulateCaptcha(capImg, capInp, setVal, finish, autoSubmit) {
+    const solver = window.CoerCaptchaSolver || (typeof CoerCaptchaSolver !== 'undefined' ? CoerCaptchaSolver : null);
+    if (!solver) {
+      finish('D-Campus: CAPTCHA engine loading...', 'info');
+      setTimeout(() => solveAndPopulateCaptcha(capImg, capInp, setVal, finish, autoSubmit), 300);
+      return;
+    }
+
+    finish('⚡ D-Campus: Solving CAPTCHA on-device…', 'info');
+    solver.solve(capImg).then((code) => {
+      if (!code || code.length < 4) {
+        finish(`✕ CAPTCHA solve retrying ('${code || 'EMPTY'}')…`, 'error');
+        // Trigger ERP refresh button
+        const refreshBtn = document.getElementById('btnRefreshCaptcha');
+        if (refreshBtn) refreshBtn.click();
+        return;
       }
+
+      setVal(capInp, code);
+      finish(`✓ CAPTCHA SOLVED: ${code}`, 'success');
+
+      // 4. Auto-submit if enabled and credentials provided
+      if (autoSubmit) {
+        setTimeout(() => {
+          const submitBtn = document.querySelector('button.btnSubmit, input[type="submit"].btnSubmit');
+          if (submitBtn) {
+            finish('🚀 D-Campus: Submitting login…', 'info');
+            submitBtn.click();
+          }
+        }, 450);
+      } else {
+        // Focus password if empty, else focus login button
+        const passInp = document.getElementById('Password');
+        const submitBtn = document.querySelector('button.btnSubmit');
+        if (passInp && !passInp.value) {
+          passInp.focus();
+        } else if (submitBtn) {
+          submitBtn.focus();
+        }
+      }
+    });
+  }
+
+  // Listen for popup credential updates to trigger instant in-page autofill
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'CREDENTIALS_UPDATED' || msg.type === 'TRIGGER_AUTO_LOGIN') {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/' || path.includes('/account/login')) {
+        runAutoLogin(true);
+      }
+    }
+  });
+
+  // Auto-detect student identity and sync if on an authenticated page
+  async function checkAndSyncStudentSession() {
+    const path = window.location.pathname.toLowerCase();
+
+    // ----------------------------------------------------------------
+    // LOGIN PAGE: Native Auto-Fill + CAPTCHA Solver + Auto-Submit
+    // ----------------------------------------------------------------
+    if (path === '/' || path.includes('/account/login')) {
+      runAutoLogin(false);
       return;
     }
 
     // Authenticated page session check
     const student = detectStudentContext();
     if (student.regId) {
-      console.log('[COER OS] Active student session detected:', student);
+      console.log('[D-CAMPUS] Active student session detected:', student);
       // Immediately trigger heartbeat pulse to keep ERP session alive
       chrome.runtime.sendMessage({ type: 'TRIGGER_HEARTBEAT' });
 
@@ -2343,7 +2403,7 @@
           if (res && res.success) {
             await loadCachedDataAndRender();
             if (isNewStudent && student.studentName) {
-              showToast(`Welcome, ${student.studentName}! ERP Synced.`, 'success');
+              showToast(`Welcome, ${student.studentName}! D-Campus Synced.`, 'success');
             }
           }
         });

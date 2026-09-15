@@ -1,5 +1,5 @@
 /**
- * COER Retro OS - iCalendar (.ics) Generator Utility
+ * D-Campus - iCalendar (.ics) Generator Utility (v1.4.0)
  * Generates RFC 5545 compliant .ics files for Google Calendar, Apple Calendar, Outlook.
  */
 (function (global) {
@@ -78,10 +78,10 @@
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//COER University//COER Retro OS Timetable//EN',
+      'PRODID:-//D-Campus//Timetable v1.4.0//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      `X-WR-CALNAME:COER Class Timetable - ${escapeIcsText(studentName)}`,
+      `X-WR-CALNAME:D-Campus Timetable - ${escapeIcsText(studentName)}`,
       'X-WR-TIMEZONE:Asia/Kolkata',
       'BEGIN:VTIMEZONE',
       'TZID:Asia/Kolkata',
@@ -114,7 +114,7 @@
         totalClasses++;
         const dtstart = `${yyyymmdd}T${match[1]}${match[2]}00`;
         const dtend = `${yyyymmdd}T${match[3]}${match[4]}00`;
-        const uid = `${yyyymmdd}T${match[1]}${match[2]}00-${dayMeta.byDay}-${p.period || 'P'}-${(p.code || 'CLS').replace(/[^a-zA-Z0-9]/g, '')}@coer-retro-os`;
+        const uid = `${yyyymmdd}T${match[1]}${match[2]}00-${dayMeta.byDay}-${p.period || 'P'}-${(p.code || 'CLS').replace(/[^a-zA-Z0-9]/g, '')}@d-campus`;
 
         const summary = `${p.shortSubject || p.subject}${p.code ? ' (' + p.code + ')' : ''}`;
         const description = [

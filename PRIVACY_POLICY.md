@@ -1,16 +1,16 @@
-# Privacy Policy for COER Retro OS - Modern ERP Suite
+# Privacy Policy for D-Campus - Modern ERP Suite
 
-**Version:** 1.2.0  
-**Effective Date:** September 11, 2026  
+**Version:** 1.4.0  
+**Effective Date:** September 16, 2026  
 
-COER Retro OS ("the Extension") is an open-source, student-focused browser extension developed to augment and modernize the user interface of the official COER University ERP portal (`https://erp.coeruniversity.in/`). 
+D-Campus ("the Extension") is an open-source, student-focused browser extension developed to augment and modernize the user interface of the official COER University ERP portal (`https://erp.coeruniversity.in/`). 
 
 Your privacy is paramount. This Privacy Policy details how the Extension handles information, our strict on-device data isolation, and why we do not collect, transmit, or monetize any user data.
 
 ---
 
 ## 1. Single Purpose & Architecture
-The sole purpose of COER Retro OS is to enhance accessibility, navigation, and usability on the COER University ERP student portal. It introduces a high-contrast retro-dark dashboard, dynamic timetable schedule tracking, priority assignment management, irreversible submission safety verification, and attendance shortfall/bunk calculations.
+The sole purpose of D-Campus is to enhance accessibility, navigation, and usability on the COER University ERP student portal. It introduces a high-contrast retro-dark dashboard, dynamic timetable schedule tracking, priority assignment management, irreversible submission safety verification, and attendance shortfall/bunk calculations.
 
 All features operate **100% client-side** directly inside the user's browser sandbox.
 
@@ -20,7 +20,7 @@ All features operate **100% client-side** directly inside the user's browser san
 
 ### A. Academic Records (Read-Only via Session)
 When active on the ERP portal, the Extension processes academic information already available to your authenticated session:
-- **Student Profile:** Student Name, Student ID (e.g., `CU240250963`), Registration ID (RegID), Program, Course, Branch, Year, and Section.
+- **Student Profile:** Student Name, Student ID (e.g., `CU24025XXXX`), Registration ID (RegID), Program, Course, Branch, Year, and Section.
 - **Attendance Metrics:** Cumulative and subject-wise attendance percentages, total lectures delivered, and total lectures attended.
 - **Assignments & Course Notes:** Assignment titles, deadlines, submission status, grades, faculty names, and lecture material links.
 - **Class Schedule:** Weekly periods (P1–P7) and faculty details for Monday through Friday.
@@ -76,7 +76,7 @@ You have complete control over your data:
 
 ## 7. Open-Source Transparency & Contact
 
-COER Retro OS is open-source under the MIT License. You can review the complete source code, audit all network calls, and verify our privacy guarantees on GitHub:
+D-Campus is open-source under the MIT License. You can review the complete source code, audit all network calls, and verify our privacy guarantees on GitHub:
 
 - **Author:** Pranav Pandey (AkaPranav)
 - **Developer Email:** `heypranavpandey@gmail.com`
