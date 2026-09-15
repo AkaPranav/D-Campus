@@ -179,11 +179,19 @@ D-Campus adheres to a cohesive **Retro-Dark Neo-Brutalist** visual standard:
 
 ## 📥 Installation
 
-### Method A: Load Unpacked (Developer Mode)
+### Method A: Download Pre-Packaged Release (.ZIP) — Recommended
+1. Download `d-campus-webstore-v1.4.0.zip` (or `d-campus-v1.4.0.zip`) from the [Latest Release](https://github.com/AkaPranav/D-Campus/releases/latest).
+2. Extract the ZIP archive into a folder on your computer.
+3. Open Google Chrome (or Brave, Edge, Arc, Opera) and navigate to `chrome://extensions`.
+4. Enable the **Developer mode** toggle in the top-right corner.
+5. Click **Load unpacked** and select the extracted folder (containing `manifest.json`).
+6. Navigate to `https://erp.coeruniversity.in/` and log in. The **⚡ D-Campus** HUD launcher and toolbar extension will activate immediately!
+
+### Method B: Clone from Source (Developer Mode)
 1. Clone this repository:
    ```bash
-   git clone https://github.com/akapandey/coer.git
-   cd coer
+   git clone https://github.com/AkaPranav/D-Campus.git
+   cd D-Campus
    ```
 2. Open Google Chrome and navigate to `chrome://extensions`.
 3. Enable **Developer mode** toggle in the top-right corner.

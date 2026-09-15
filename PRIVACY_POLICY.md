@@ -80,5 +80,5 @@ D-Campus is open-source under the MIT License. You can review the complete sourc
 
 - **Author:** Pranav Pandey (AkaPranav)
 - **Developer Email:** `heypranavpandey@gmail.com`
-- **Source Repository:** `https://github.com/akapandey/coer`
-- **Issue Tracker:** `https://github.com/akapandey/coer/issues`
+- **Source Repository:** `https://github.com/AkaPranav/D-Campus`
+- **Issue Tracker:** `https://github.com/AkaPranav/D-Campus/issues`
