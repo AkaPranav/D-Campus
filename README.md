@@ -1,67 +1,71 @@
-# ⚡ D-Campus — Modern ERP Suite
+# ⚡ D-Campus — Modern Student Suite
 
 [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
 [![Version](https://img.shields.io/badge/Version-v1.4.0-06b6d4?style=for-the-badge)](#)
-[![Technical Analysis](https://img.shields.io/badge/ERP_Impact-Engineering_Report-10b981?style=for-the-badge)](./ANALYSIS.md)
+[![Architecture Analysis](https://img.shields.io/badge/Architecture_Report-10b981?style=for-the-badge)](./ANALYSIS.md)
 [![Design System](https://img.shields.io/badge/Theme-Retro_Dark_Neo--Brutalist-a855f7?style=for-the-badge)](#-design-system)
 [![Privacy Policy](https://img.shields.io/badge/Privacy_Policy-100%25_On--Device-10b981?style=for-the-badge)](./PRIVACY_POLICY.md)
 [![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](LICENSE)
 
-> A cyberpunk retro-dark augmentation suite for the **COER University ERP Student Portal**, transforming clunky legacy tables into a high-contrast, tactical dashboard with real-time academic synchronization, priority assignment queues, and single-click workflows.
+> A cyberpunk retro-dark augmentation suite for the student portal, transforming clunky legacy tables into a high-contrast, tactical dashboard with real-time academic synchronization, priority assignment queues, and single-click workflows.
+
+<div align="center">
+  <img src="./assets/screenshots/01_attendance_gauge.png" alt="D-Campus Suite Interface" width="100%" />
+</div>
 
 > [!TIP]
 > **Technical Deep Dive:** Read our full engineering report on server bottlenecks, payload measurements, and balanced trade-offs:  
-> 👉 **[Technical & Quantitative ERP Impact Analysis (`ANALYSIS.md`)](./ANALYSIS.md)**
+> 👉 **[Technical & Quantitative Impact Analysis (`ANALYSIS.md`)](./ANALYSIS.md)**
 
 ---
 
 ## 📸 Showcase & Visual Tour
 
-### 1. Active Priority Assignments Queue
+### 1. Real-Time Attendance Gauge & Threshold Monitor
+*Instant retro KPI radial gauge showing overall attendance percentage, safe (≥75%) vs. critical status, and the exact count of classes needed to reach eligibility or safe bunk allowance.*
+![Attendance Gauge](./assets/screenshots/01_attendance_gauge.png)
+
+---
+
+### 2. Active Priority Assignments Queue
 *Active assignments sorted with urgency priority (nearest due date first), overdue upload protections, subject filter chips, and instant Base64 spec downloads.*
-![Active Assignments Queue](assets/screenshots/02_active_assignments.png)
+![Active Assignments Queue](./assets/screenshots/02_active_assignments.png)
 
 ---
 
-### 2. Lecture Notes & Study Material Center
-*Curated repository of 37+ faculty lecture notes, topic keywords, and direct download links — with clutter and deadline badges cleanly removed.*
-![Study Materials & Notes](assets/screenshots/03_study_materials.png)
-
----
-
-### 3. Real-Time Attendance Gauge & Threshold Monitor
-*Instant retro KPI radial gauge showing overall attendance percentage, safe (≥75%) vs. critical status, and the exact count of classes needed to reach eligibility.*
-![Attendance Gauge](assets/screenshots/01_attendance_gauge.png)
+### 3. Lecture Notes & Study Material Center
+*Curated repository of 38+ faculty lecture notes, topic keywords, and direct download links — with clutter and deadline badges cleanly removed.*
+![Study Materials & Notes](./assets/screenshots/03_study_materials.png)
 
 ---
 
 ### 4. Dynamic Monday–Friday Timetable Schedule
 *Interactive weekly class schedule featuring real-time period status indicators (`COMPLETED`, `NOW RUNNING`, `UPCOMING`), next lecture ticker, and an in-card elective track switcher (GATE, CAT, Study Abroad, Competitive Coding).*
-![Timetable Schedule](assets/screenshots/04_timetable_electives.png)
+![Timetable Schedule](./assets/screenshots/04_timetable_electives.png)
 
 ---
 
 ### 5. Irreversible Single-Submission Safety Shield
 *Pre-flight verification modal with hazard stripes, assignment metadata review, file format validator (.pdf/.doc/.docx <5MB), and a mandatory confirmation lock to protect against irreversible portal uploads.*
-![Submission Safety Shield](assets/screenshots/05_submission_safety_shield.png)
+![Submission Safety Shield](./assets/screenshots/05_submission_safety_shield.png)
 
 ---
 
 ### 6. Google Calendar / iCal (.ics) Timetable Sync
 *One-click schedule exporter generating RFC 5545 compliant `.ics` calendar files with automatic 10-minute class alerts, embedded `Asia/Kolkata` timezone specifications, and 2-click synchronization with Google Calendar, Apple Calendar, and Outlook.*
-![Google Calendar Timetable Sync](assets/screenshots/06_calendar_sync_modal.png)
+![Google Calendar Timetable Sync](./assets/screenshots/06_calendar_sync_modal.png)
 
 ---
 
-### 7. 24/7 Session Keep-Alive Heartbeat & HUD
+### 7. 24/7 Session Keep-Alive Heartbeat & Toolbar HUD
 *Continuous background sliding-window heartbeat preventing untimely portal logouts and eliminating annoying CAPTCHA prompts throughout the day, complete with real-time pulse feedback in both Popup and In-Page Overlay.*
-![Session Keep-Alive Heartbeat](assets/screenshots/07_session_keepalive.png)
+![Session Keep-Alive Heartbeat](./assets/screenshots/07_session_keepalive.png)
 
 ---
 
 ### 8. "Buy me a Chai" Developer Support Modal
 *Tactile, retro support dialog allowing students to support ongoing development via direct UPI payments or offline high-res QR code with zero external tracking.*
-![Buy me a Chai Support Modal](assets/screenshots/08_chai_support_modal.png)
+![Buy me a Chai Support Modal](./assets/screenshots/08_chai_support_modal.png)
 
 ---
 
@@ -79,7 +83,7 @@
 - **Direct Spec Downloader:** Bypasses expired frontend checks to download assignment sheets directly via Base64 stream decoding.
 
 ### 📅 3. Dynamic Mon–Fri Timetable & Elective Selector
-- **Scope-Aligned Calendar:** Scoped specifically to Monday–Friday following COER University's academic week.
+- **Scope-Aligned Calendar:** Scoped specifically to Monday–Friday following the university's academic week.
 - **Dynamic Multi-Elective Dropdown:** Parses merged multi-track elective periods and provides an in-card switcher (GATE, CAT, Study Abroad, Competitive Coding, Project V, Internship) with persistent local memory.
 - **Dynamic "Now & Next" Ticker:** Continuously tracks the currently running period and predicts the next upcoming class today or next weekday morning.
 
@@ -87,7 +91,7 @@
 - **Session-Based Profile Resolution:** Automatically resolves student identity (`RegID`, `StudentID`, `StudentName`, `Branch`, `Year`) via session cookies without hardcoded IDs.
 - **Account Switch Detection:** Automatically flushes stale caches and re-synchronizes when a different student logs in on the same workstation.
 - **One-Click Auto-Login Engine:** Stores Student ID and Password securely in Chrome local storage, then auto-fills credentials, solves the CAPTCHA, and submits the form — completely hands-free.
-- **Client-Side CAPTCHA Solver (Zero-External Dependencies):** Pure JavaScript OCR engine solving ERP CAPTCHAs in <2ms directly in the browser with no network calls, no Python, no Selenium, and no third-party OCR APIs.
+- **Client-Side CAPTCHA Solver (Zero-External Dependencies):** Pure JavaScript OCR engine solving portal CAPTCHAs in <2ms directly in the browser with no network calls, no Python, no Selenium, and no third-party OCR APIs.
   - *Binary Luminance Thresholding:* Strips colored noise circles in O(n) via `(r < 85 && g < 85 && b < 85) ? 0 : 255`.
   - *8-Directional Connected-Component BFS:* Segmenting all 6 alphanumeric glyphs without external heuristics.
   - *Normalized 20×24 Bitmask IoU Matching:* 36 precompiled character templates matched via Intersection-over-Union with deterministic `'I'` stem detection by aspect ratio.
@@ -113,13 +117,13 @@
 
 ---
 
-## 📊 Quantitative ERP Impact & Performance
+## 📊 Quantitative Impact & Performance
 
-For an in-depth, mathematically grounded analysis of how this extension reduces server bandwidth by **98.5%**, eliminates routine timetable requests for 1,000+ students, and compares legacy ERP bottlenecks against local caching:
+For an in-depth, mathematically grounded analysis of how this extension reduces server bandwidth by **98.5%**, eliminates routine timetable requests for 1,000+ students, and compares legacy bottlenecks against local caching:
 
 👉 **[Read the Full Technical & Quantitative Impact Analysis (`ANALYSIS.md`)](./ANALYSIS.md)**
 
-| Dimension | Legacy ERP Workflow | D-Campus Suite | Measured Gain |
+| Dimension | Legacy Portal Workflow | D-Campus Suite | Measured Gain |
 | :--- | :--- | :--- | :--- |
 | **Payload Per Session** | ~2.4 MB (HTML + scripts + CSS) | ~36.6 KB JSON / **0 KB** (Cache) | **~98.5% Bandwidth Reduction** |
 | **Schedule Lookups** | 20,000 weekly hits / 1,000 students | **0 requests** (Migrated to G-Cal) | **99.96% Server Offloading** |
@@ -141,7 +145,7 @@ extension/
 │   └── service-worker.js      # Background sync engine, alarms, cookie-authenticated fetchers
 ├── content/
 │   ├── content.js             # Isolated Shadow DOM UI injection, auto-login workflow, modals
-│   └── overlay.css            # Scoped retro-dark design system (zero leakage into ERP styles)
+│   └── overlay.css            # Scoped retro-dark design system (zero leakage into native portal styles)
 └── popup/
     ├── popup.html             # Compact toolbar HUD popup + Auto-Login credential card
     ├── popup.css              # HUD visual styling + credential toggle/inputs
@@ -149,7 +153,7 @@ extension/
 ```
 
 * **Chrome Manifest V3:** Built entirely on modern V3 specifications with service worker lifecycle management and `chrome.storage.local`.
-* **Zero-Leakage Shadow DOM:** The entire dashboard UI and retro style system are encapsulated inside an isolated Shadow Root (`#coer-retro-os-host`), ensuring zero styling conflicts with COER's native Bootstrap 3 portal.
+* **Zero-Leakage Shadow DOM:** The entire dashboard UI and retro style system are encapsulated inside an isolated Shadow Root (`#coer-retro-os-host`), ensuring zero styling conflicts with native portal styles.
 * **Local-First & Offline Ready:** All academic records are cached locally on device for instant rendering without lag.
 
 ---
@@ -201,7 +205,7 @@ D-Campus adheres to a cohesive **Retro-Dark Neo-Brutalist** visual standard:
 
 ## ☕ Support the Developer ("Buy me a Chai")
 
-D-Campus was built with late-night reverse engineering, passion for tactile UI, and lots of chai — designed to rescue fellow COERians from 180-feedback lockout gates, 20-minute IIS session timeouts, and clunky legacy tables.
+D-Campus was built with late-night reverse engineering, passion for tactile UI, and lots of chai — designed to rescue students from 180-feedback lockout gates, 20-minute IIS session timeouts, and clunky legacy tables.
 
 If this extension made your academic semester smoother, consider fueling ongoing updates with a cutting chai!
 
