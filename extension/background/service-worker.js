@@ -601,27 +601,54 @@ const SUBJECT_SHORT_MAP = {
 };
 
 function cleanFacultyName(raw) {
-  if (!raw) return "";
-  return raw.replace(/\s+/g, ' ').trim();
+  if (!raw) return "—";
+
+  // Check for substitution notice e.g. "Lecture Substituted ...,Ankita" or "Lecture Substituted Ankita"
+  const subMatch = raw.match(/Lecture\s+Substituted(?:.*?,\s*|\s+)([^<:]+)/i);
+  const subFaculty = subMatch
+    ? subMatch[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[;,.]$/, '')
+        .trim()
+    : null;
+
+  let cleaned = raw
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (cleaned.includes(':')) {
+    cleaned = cleaned.split(':')[0].trim();
+  }
+
+  if (subFaculty && subFaculty.toLowerCase() !== cleaned.toLowerCase()) {
+    return `${cleaned} (Sub: ${subFaculty})`;
+  }
+
+  return cleaned || "—";
 }
 
 function parseElectiveOptions(val) {
   if (!val || typeof val !== 'string') return [];
   const segments = val.split('-').map(s => s.trim()).filter(Boolean);
   return segments.map(seg => {
-    const parts = seg.split(',');
-    const rawSubj = (parts[0] || '').trim();
-    const rawFac = parts.length > 1 ? (parts[1] || '').trim() : '';
+    const firstCommaIdx = seg.indexOf(',');
+    const rawSubj = firstCommaIdx !== -1 ? seg.substring(0, firstCommaIdx).trim() : seg.trim();
+    const rawFac = firstCommaIdx !== -1 ? seg.substring(firstCommaIdx + 1).trim() : '';
 
     const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
     const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
     const code = (matchSubj && matchSubj[2]) ? matchSubj[2].trim() : '';
-    const shortSubject = SUBJECT_SHORT_MAP[baseSubj] || baseSubj;
+    const cleanSubj = baseSubj.replace(/<[^>]+>/g, '').trim();
+    const shortSubject = SUBJECT_SHORT_MAP[cleanSubj] || SUBJECT_SHORT_MAP[baseSubj] || cleanSubj;
     const faculty = cleanFacultyName(rawFac);
 
     return {
       raw: seg,
-      subject: baseSubj,
+      subject: cleanSubj,
       shortSubject,
       code,
       faculty

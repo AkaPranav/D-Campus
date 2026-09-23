@@ -101,7 +101,7 @@ const SUBJECT_SHORT_MAP: Record<string, string> = {
 
 function cleanSubjectName(name: string): string {
   if (!name) return 'Subject';
-  let clean = name.replace(/\(S\)$/i, '').trim();
+  let clean = name.replace(/<[^>]+>/g, '').replace(/\(S\)$/i, '').trim();
   if (SUBJECT_SHORT_MAP[clean]) return SUBJECT_SHORT_MAP[clean];
   if (SUBJECT_SHORT_MAP[name]) return SUBJECT_SHORT_MAP[name];
   return clean
@@ -114,7 +114,36 @@ function cleanSubjectName(name: string): string {
 
 function cleanFacultyName(raw: string): string {
   if (!raw) return '—';
-  return raw.replace(/\s+/g, ' ').trim();
+
+  // Check for substitution notice e.g. "Lecture Substituted ...,Ankita" or "Lecture Substituted Ankita"
+  const subMatch = raw.match(/Lecture\s+Substituted(?:.*?,\s*|\s+)([^<:]+)/i);
+  const subFaculty = subMatch
+    ? subMatch[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[;,.]$/, '')
+        .trim()
+    : null;
+
+  // Strip all HTML tags and entities
+  let cleaned = raw
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // If there's a colon followed by "Lecture Substituted", extract the primary professor name
+  if (cleaned.includes(':')) {
+    cleaned = cleaned.split(':')[0].trim();
+  }
+
+  // If substitution was detected, append clean label
+  if (subFaculty && subFaculty.toLowerCase() !== cleaned.toLowerCase()) {
+    return `${cleaned} (Sub: ${subFaculty})`;
+  }
+
+  return cleaned || '—';
 }
 
 /**
@@ -440,9 +469,9 @@ function parseElectiveSegments(val: string) {
   if (!val || typeof val !== 'string') return [];
   const segments = val.split('-').map((s) => s.trim()).filter(Boolean);
   return segments.map((seg) => {
-    const parts = seg.split(',');
-    const rawSubj = (parts[0] || '').trim();
-    const rawFac = parts.length > 1 ? (parts[1] || '').trim() : '';
+    const firstCommaIdx = seg.indexOf(',');
+    const rawSubj = firstCommaIdx !== -1 ? seg.substring(0, firstCommaIdx).trim() : seg.trim();
+    const rawFac = firstCommaIdx !== -1 ? seg.substring(firstCommaIdx + 1).trim() : '';
 
     const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
     const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
