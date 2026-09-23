@@ -66,9 +66,9 @@ export default function ChaiModal({ isOpen, onClose }: ChaiModalProps) {
 
           {/* Contribution Tier Chips - Tactile Retro */}
           <div className="grid grid-cols-2 gap-2">
-            {CHIPS.map((chip) => (
+            {CHIPS.map((chip, idx) => (
               <button
-                key={chip.amount}
+                key={`${chip.amount}-${idx}`}
                 onClick={() => setSelectedAmount(chip.amount)}
                 className={`py-2 px-2 rounded-sm font-mono text-[11px] font-black transition-all border-2 border-[#000000] ${
                   selectedAmount === chip.amount

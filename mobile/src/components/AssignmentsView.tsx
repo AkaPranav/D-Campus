@@ -167,14 +167,14 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
           >
             ALL ({categoryItems.length})
           </button>
-          {subjectList.map((sub) => {
+          {subjectList.map((sub, idx) => {
             const count = categoryItems.filter((i) => i.subjectName === sub).length;
             const isSelected = selectedSubject === sub;
             return (
               <button
-                key={sub}
+                key={`${sub}-${idx}`}
                 onClick={() => setSelectedSubject(sub)}
-                className={`px-2.5 py-1 rounded-sm font-mono text-[10px] font-black shrink-0 transition-colors truncate max-w-[170px] border ${
+                className={`px-2.5 py-1 rounded-sm font-mono text-[10px] font-black shrink-0 transition-colors border ${
                   isSelected
                     ? 'bg-[#fbbf24] text-[#000000] border-[#000000] shadow-[1.5px_1.5px_0px_#000000]'
                     : 'bg-[#080a0d] text-[#94a3b8] border-[#2d3545]'
@@ -189,13 +189,13 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
 
       {/* Items List */}
       <div className="space-y-3">
-        {sortedItems.map((item) => {
+        {sortedItems.map((item, idx) => {
           const isDownloading = downloadingId === item.detailId;
 
           if (activeCategory === 'STUDY_MATERIAL') {
             // Lecture Notes Card (Zero deadlines, zero pass marks)
             return (
-              <div key={item.detailId} className="retro-card overflow-hidden">
+              <div key={`note-${item.detailId || item.assignmentId}-${idx}`} className="retro-card overflow-hidden">
                 <div className="retro-card-header py-1.5 px-3">
                   <span className="font-mono text-[10px] font-black text-[#000000] bg-[#06b6d4] px-1.5 py-0.2 rounded border border-[#000000]">
                     {item.subjectCode || 'NOTES'}
@@ -236,7 +236,7 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
           // Active / Overdue Assignment Card
           return (
             <div
-              key={item.detailId}
+              key={`asg-${item.detailId || item.assignmentId}-${idx}`}
               className={`retro-card overflow-hidden ${
                 item.isOverdue ? 'opacity-65 bg-[#0e1218]' : ''
               }`}

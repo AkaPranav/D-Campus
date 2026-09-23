@@ -173,13 +173,13 @@ export default function AttendanceView({ data }: AttendanceViewProps) {
 
       {/* Subject Cards List */}
       <div className="space-y-3">
-        {filteredSubjects.map((sub: SubjectAttendance) => {
+        {filteredSubjects.map((sub: SubjectAttendance, idx: number) => {
           const subSafe = sub.percentage >= 75;
           const pctColor = subSafe ? 'text-[#10b981]' : sub.percentage >= 70 ? 'text-[#fbbf24]' : 'text-[#f43f5e]';
           const barColor = subSafe ? 'bg-[#10b981]' : sub.percentage >= 70 ? 'bg-[#fbbf24]' : 'bg-[#f43f5e]';
 
           return (
-            <div key={sub.subjectId || sub.subjectCode} className="retro-card overflow-hidden">
+            <div key={`${sub.subjectId || sub.subjectCode}-${idx}`} className="retro-card overflow-hidden">
               {/* Card Top Titlebar */}
               <div className="retro-card-header py-1.5 px-3">
                 <div className="flex items-center gap-1.5 truncate">

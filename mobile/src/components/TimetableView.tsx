@@ -118,7 +118,7 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
 
       {/* Period Cards List */}
       <div className="space-y-3">
-        {periods.map((period: TimetablePeriod) => {
+        {periods.map((period: TimetablePeriod, idx: number) => {
           const [startStr, endStr] = period.timeSlot.split('-');
           const parseTime = (tStr: string) => {
             if (!tStr) return 0;
@@ -153,7 +153,7 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
 
           return (
             <div
-              key={period.periodNumber}
+              key={`${selectedDay}-P${period.periodNumber}-${idx}`}
               className={`retro-card overflow-hidden transition-all ${
                 isNowRunning
                   ? 'border-2 border-[#fbbf24] shadow-[4px_4px_0px_#000000]'
@@ -260,11 +260,11 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
                     {activeDropdown === periodKey && (
                       <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-[#13171f] border-2 border-[#000000] rounded shadow-[4px_4px_0px_#000000] overflow-hidden">
                         <div className="py-1">
-                          {period.electiveOptions.map((opt) => {
+                          {period.electiveOptions.map((opt, optIdx) => {
                             const isSelected = activeElective?.code === opt.code;
                             return (
                               <button
-                                key={opt.code}
+                                key={`${opt.code}-${optIdx}`}
                                 type="button"
                                 onClick={() => handleSelectElective(periodKey, opt.code)}
                                 className={`w-full px-3 py-2 text-left font-mono text-xs flex items-center justify-between transition-colors ${
