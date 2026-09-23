@@ -35,45 +35,45 @@ export default function ChaiModal({ isOpen, onClose }: ChaiModalProps) {
   )}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-sm bg-[#111827] border-2 border-[#f59e0b] rounded-xl shadow-[0_0_24px_rgba(245,158,11,0.2)] overflow-hidden">
-        {/* Header */}
-        <div className="bg-[#f59e0b] px-4 py-2.5 flex items-center justify-between text-[#000000]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85">
+      <div className="w-full max-w-sm bg-[#13171f] border-2 border-[#000000] rounded shadow-[6px_6px_0px_#000000] overflow-hidden">
+        {/* Retro Header */}
+        <div className="bg-[#fbbf24] px-3.5 py-2 flex items-center justify-between text-[#000000] border-b-2 border-[#000000]">
           <div className="flex items-center gap-2">
-            <Coffee size={18} className="stroke-[2.5]" />
+            <Coffee size={16} className="stroke-[2.5]" />
             <span className="font-mono text-xs font-black tracking-wider uppercase">
               BUY ME A CHAI ☕
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-black/15 rounded transition-colors text-black"
+            className="p-1 hover:bg-black/15 rounded transition-colors text-black font-mono font-black text-xs"
           >
-            <X size={16} />
+            [X]
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-4 space-y-4">
-          <div className="text-center space-y-1">
-            <h3 className="font-mono text-sm font-bold text-[#f3f4f6]">
-              Keep D-Campus Free &amp; Fast
+        <div className="p-4 space-y-3.5">
+          <div className="space-y-1">
+            <h3 className="font-mono text-xs font-black text-[#f8fafc] uppercase">
+              Keep D-Campus Free &amp; Ad-Free
             </h3>
-            <p className="text-xs text-[#9ca3af] leading-relaxed">
-              Built with zero ads, automated background CAPTCHA solving, and 24/7 session keep-alive. Fuel ongoing development with a hot cup of tea!
+            <p className="text-[11px] font-mono text-[#94a3b8] leading-relaxed">
+              Automated zero-CAPTCHA solving, background live sync, and safe bunk calculators. Fuel development with a warm cup of cutting chai!
             </p>
           </div>
 
-          {/* Contribution Tier Chips */}
+          {/* Contribution Tier Chips - Tactile Retro */}
           <div className="grid grid-cols-2 gap-2">
             {CHIPS.map((chip) => (
               <button
                 key={chip.amount}
                 onClick={() => setSelectedAmount(chip.amount)}
-                className={`py-2 px-2 rounded font-mono text-xs font-bold transition-all border ${
+                className={`py-2 px-2 rounded-sm font-mono text-[11px] font-black transition-all border-2 border-[#000000] ${
                   selectedAmount === chip.amount
-                    ? 'bg-[#f59e0b] text-[#000000] border-[#000000] shadow-[2px_2px_0px_#000000]'
-                    : 'bg-[#1f2937] text-[#d1d5db] border-[#374151] hover:border-[#f59e0b]'
+                    ? 'bg-[#fbbf24] text-[#000000] shadow-[2px_2px_0px_#000000]'
+                    : 'bg-[#080a0d] text-[#94a3b8] hover:text-[#f8fafc]'
                 }`}
               >
                 {chip.label}
@@ -82,26 +82,26 @@ export default function ChaiModal({ isOpen, onClose }: ChaiModalProps) {
           </div>
 
           {/* UPI ID & Quick Copy Box */}
-          <div className="space-y-1.5">
-            <span className="font-mono text-[10px] font-bold text-[#9ca3af] block">
+          <div className="space-y-1">
+            <span className="font-mono text-[9px] font-black text-[#64748b] block uppercase">
               OFFICIAL UPI ID
             </span>
-            <div className="flex items-center gap-2 bg-[#1f2937] border border-[#374151] rounded p-2">
+            <div className="flex items-center gap-2 bg-[#080a0d] border-2 border-[#000000] rounded p-2 shadow-[2px_2px_0px_#000000]">
               <span className="font-mono text-xs text-[#10b981] font-bold flex-1 truncate">
                 {upiId}
               </span>
               <button
                 onClick={handleCopy}
-                className="btn-retro px-2.5 py-1 rounded text-[10px] font-mono font-bold text-[#f3f4f6] flex items-center gap-1 shrink-0"
+                className="btn-retro px-2 py-0.5 text-[9px] flex items-center gap-1 shrink-0"
               >
                 {copied ? (
                   <>
-                    <Check size={12} className="text-[#10b981]" />
+                    <Check size={11} className="text-[#10b981]" />
                     <span>COPIED!</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={12} />
+                    <Copy size={11} />
                     <span>COPY</span>
                   </>
                 )}
@@ -113,29 +113,29 @@ export default function ChaiModal({ isOpen, onClose }: ChaiModalProps) {
           <div className="space-y-2 pt-1">
             <a
               href={upiUri}
-              className="w-full btn-retro btn-retro-gold py-2.5 rounded font-mono text-xs font-black flex items-center justify-center gap-2 block text-center"
+              className="w-full btn-retro btn-retro-gold py-2.5 text-xs flex items-center justify-center gap-2 block text-center"
             >
               <span>PAY ₹{selectedAmount} VIA ANY UPI APP</span>
             </a>
 
             <button
               onClick={() => setShowQr(!showQr)}
-              className="w-full py-1.5 text-center font-mono text-[11px] text-[#06b6d4] hover:underline flex items-center justify-center gap-1"
+              className="w-full py-1 text-center font-mono text-[10px] text-[#06b6d4] font-bold hover:underline flex items-center justify-center gap-1 uppercase"
             >
-              <QrCode size={13} />
-              <span>{showQr ? 'Hide QR Code' : 'Scan via QR Code'}</span>
+              <QrCode size={12} />
+              <span>{showQr ? '[HIDE QR CODE]' : '[SCAN VIA QR CODE]'}</span>
             </button>
 
             {showQr && (
-              <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-[#374151]">
+              <div className="flex flex-col items-center justify-center p-3 bg-white border-2 border-[#000000] rounded shadow-[3px_3px_0px_#000000]">
                 <img
                   src={qrUrl}
                   alt="UPI QR Code"
                   className="w-36 h-36"
                   loading="lazy"
                 />
-                <span className="font-mono text-[10px] text-black font-bold mt-1">
-                  Scan with GPay / PhonePe / Paytm
+                <span className="font-mono text-[9px] text-black font-black mt-1 uppercase">
+                  Scan via GPay / PhonePe / Paytm
                 </span>
               </div>
             )}

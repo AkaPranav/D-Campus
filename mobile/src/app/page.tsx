@@ -201,7 +201,7 @@ export default function Home() {
   ).length;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0b0f19] text-[#f3f4f6] flex flex-col font-sans select-none">
+    <div className="min-h-[100dvh] bg-[#0b0d11] text-[#f8fafc] flex flex-col font-mono select-none">
       {/* Top Persistent HUD */}
       <TopHUD
         student={student}

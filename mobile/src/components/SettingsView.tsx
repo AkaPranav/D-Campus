@@ -3,14 +3,11 @@
 import React, { useState } from 'react';
 import {
   User,
-  Shield,
   Key,
   LogOut,
   Coffee,
   Activity,
   CheckCircle,
-  HelpCircle,
-  Smartphone,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -52,180 +49,184 @@ export default function SettingsView({ student, onLogout, lastSync }: SettingsVi
   };
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-28 max-w-md mx-auto">
+    <div className="space-y-4 px-3.5 py-4 pb-28 max-w-md mx-auto">
       {/* Student Profile Card */}
-      <div className="retro-card p-4 space-y-3">
-        <div className="flex items-center justify-between border-b border-[#374151] pb-2">
-          <div className="flex items-center gap-2">
-            <User size={16} className="text-[#f59e0b]" />
-            <span className="font-mono text-xs font-bold text-[#f3f4f6]">
+      <div className="retro-card overflow-hidden">
+        <div className="retro-card-header py-1.5 px-3">
+          <div className="flex items-center gap-1.5">
+            <span className="retro-dot min" />
+            <span className="font-mono text-xs font-black text-[#f8fafc] uppercase">
               STUDENT PROFILE
             </span>
           </div>
-          <span className="font-mono text-[10px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/30">
-            ENROLLED
+          <span className="retro-badge safe text-[9px]">
+            ACTIVE
           </span>
         </div>
 
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-lg bg-[#1f2937] border-2 border-[#374151] flex items-center justify-center font-mono font-black text-lg text-[#f59e0b] shrink-0">
-            {student?.studentName ? student.studentName.charAt(0) : 'S'}
+        <div className="p-3.5 flex items-start gap-3">
+          <div className="w-11 h-11 bg-[#080a0d] border-2 border-[#000000] shadow-[2px_2px_0px_#000000] flex items-center justify-center font-mono font-black text-lg text-[#fbbf24] shrink-0">
+            {student?.studentName ? student.studentName.charAt(0) : 'P'}
           </div>
 
           <div className="space-y-0.5 flex-1 min-w-0">
-            <h2 className="font-mono font-bold text-sm text-[#f3f4f6] truncate">
-              {student?.studentName || 'Student User'}
+            <h2 className="font-mono font-black text-xs text-[#f8fafc] truncate uppercase">
+              {student?.studentName || 'PRANAV PANDEY'}
             </h2>
-            <p className="font-mono text-xs text-[#06b6d4]">
-              {student?.studentId || 'CU240250963'}
+            <p className="font-mono text-[11px] text-[#06b6d4] font-bold">
+              ID: {student?.studentId || 'CU240250963'}
             </p>
-            <p className="text-[11px] text-[#9ca3af] truncate">
-              {student?.course || 'B.Tech.'} • {student?.branch || 'Computer Science'} • Sem {student?.yearSem || '5'}
+            <p className="text-[10px] font-mono text-[#94a3b8] truncate">
+              {student?.course || 'B.Tech.'} • {student?.branch || 'CSE'} (SEM {student?.yearSem || '5'})
             </p>
           </div>
         </div>
       </div>
 
       {/* On-Device Auto-Login Credentials */}
-      <div className="retro-card p-4 space-y-3">
-        <div className="flex items-center justify-between border-b border-[#374151] pb-2">
-          <div className="flex items-center gap-2">
-            <Key size={16} className="text-[#10b981]" />
-            <span className="font-mono text-xs font-bold text-[#f3f4f6]">
-              ON-DEVICE AUTO-LOGIN
+      <div className="retro-card overflow-hidden">
+        <div className="retro-card-header py-1.5 px-3">
+          <div className="flex items-center gap-1.5">
+            <Key size={13} className="text-[#fbbf24]" />
+            <span className="font-mono text-xs font-black text-[#f8fafc] uppercase">
+              STORED CREDENTIALS
             </span>
           </div>
-          <span className="font-mono text-[9px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/30 font-bold">
+          <span className="retro-badge safe text-[9px]">
             ARMED
           </span>
         </div>
 
-        <p className="text-[11px] text-[#9ca3af] leading-relaxed">
-          Your credentials are encrypted and stored strictly inside your mobile device browser. The backend automatically solves CAPTCHAs and logs you in seamlessly.
-        </p>
+        <div className="p-3.5 space-y-3">
+          <p className="text-[10px] font-mono text-[#94a3b8] leading-normal">
+            Credentials stay strictly on-device in local storage. Automatic background OCR solves the portal CAPTCHA in &lt;2ms on every launch.
+          </p>
 
-        <form onSubmit={handleUpdateCredentials} className="space-y-2.5">
-          <div>
-            <label className="block text-[10px] font-mono font-bold text-[#9ca3af] mb-1">
-              STUDENT ID
-            </label>
-            <input
-              type="text"
-              value={savedUser}
-              onChange={(e) => setSavedUser(e.target.value)}
-              className="w-full bg-[#1f2937] border border-[#374151] rounded px-3 py-1.5 font-mono text-xs text-[#f3f4f6] focus:outline-none focus:border-[#f59e0b]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-mono font-bold text-[#9ca3af] mb-1">
-              PORTAL PASSWORD
-            </label>
-            <div className="relative">
+          <form onSubmit={handleUpdateCredentials} className="space-y-2.5">
+            <div>
+              <label className="block text-[10px] font-mono font-bold text-[#94a3b8] mb-1 uppercase">
+                STUDENT ID / USERNAME
+              </label>
               <input
-                type={showPass ? 'text' : 'password'}
-                value={savedPass}
-                onChange={(e) => setSavedPass(e.target.value)}
-                className="w-full bg-[#1f2937] border border-[#374151] rounded px-3 py-1.5 font-mono text-xs text-[#f3f4f6] focus:outline-none focus:border-[#f59e0b] pr-10"
+                type="text"
+                value={savedUser}
+                onChange={(e) => setSavedUser(e.target.value)}
+                className="w-full bg-[#080a0d] border-2 border-[#000000] rounded px-3 py-1.5 font-mono text-xs text-[#f8fafc] focus:outline-none focus:border-[#fbbf24] shadow-[2px_2px_0px_#000000]"
               />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#f3f4f6]"
-              >
-                {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
             </div>
-          </div>
 
-          <div className="pt-1 flex items-center justify-between">
-            <button
-              type="submit"
-              className="btn-retro btn-retro-emerald px-3 py-1.5 rounded font-mono text-xs font-bold"
-            >
-              UPDATE CREDENTIALS
-            </button>
-            {saveFeedback && (
-              <span className="font-mono text-[10px] text-[#10b981] flex items-center gap-1 font-bold animate-fadeIn">
-                <CheckCircle size={12} /> SAVED!
-              </span>
-            )}
-          </div>
-        </form>
+            <div>
+              <label className="block text-[10px] font-mono font-bold text-[#94a3b8] mb-1 uppercase">
+                PORTAL PASSWORD
+              </label>
+              <div className="relative">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={savedPass}
+                  onChange={(e) => setSavedPass(e.target.value)}
+                  className="w-full bg-[#080a0d] border-2 border-[#000000] rounded px-3 py-1.5 font-mono text-xs text-[#f8fafc] focus:outline-none focus:border-[#fbbf24] shadow-[2px_2px_0px_#000000] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#f8fafc]"
+                >
+                  {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between">
+              <button
+                type="submit"
+                className="btn-retro btn-retro-emerald px-3 py-1.5 text-[10px]"
+              >
+                UPDATE CREDENTIALS
+              </button>
+              {saveFeedback && (
+                <span className="font-mono text-[10px] text-[#10b981] font-bold flex items-center gap-1">
+                  <CheckCircle size={12} /> SAVED!
+                </span>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
 
-      {/* System Engine Health Card */}
-      <div className="retro-card p-4 space-y-2.5">
-        <div className="flex items-center justify-between border-b border-[#374151] pb-2">
-          <div className="flex items-center gap-2">
-            <Activity size={16} className="text-[#06b6d4]" />
-            <span className="font-mono text-xs font-bold text-[#f3f4f6]">
-              SYSTEM ENGINE &amp; KEEP-ALIVE
+      {/* Engine Status Inset */}
+      <div className="retro-card overflow-hidden">
+        <div className="retro-card-header py-1.5 px-3">
+          <div className="flex items-center gap-1.5">
+            <Activity size={13} className="text-[#06b6d4]" />
+            <span className="font-mono text-xs font-black text-[#f8fafc] uppercase">
+              SESSION STATUS
             </span>
           </div>
-          <span className="font-mono text-[10px] text-[#06b6d4] bg-[#06b6d4]/10 px-2 py-0.5 rounded border border-[#06b6d4]/30">
+          <span className="retro-badge info text-[9px]">
             HEALTHY
           </span>
         </div>
 
-        <div className="space-y-1.5 text-xs font-mono">
-          <div className="flex items-center justify-between py-1 border-b border-[#1f2937]">
-            <span className="text-[#9ca3af]">Session Keep-Alive</span>
-            <span className="text-[#10b981] font-bold">5m Sliding Shield</span>
+        <div className="p-3 font-mono text-xs space-y-1.5">
+          <div className="flex items-center justify-between py-1 border-b border-[#2d3545]">
+            <span className="text-[#94a3b8] text-[10px]">Session Sliding Shield</span>
+            <span className="text-[#10b981] font-bold text-[10px]">5m Keep-Alive</span>
           </div>
-          <div className="flex items-center justify-between py-1 border-b border-[#1f2937]">
-            <span className="text-[#9ca3af]">CAPTCHA OCR Engine</span>
-            <span className="text-[#f59e0b] font-bold">Node.js Bitmask (&lt;2ms)</span>
-          </div>
-          <div className="flex items-center justify-between py-1 border-b border-[#1f2937]">
-            <span className="text-[#9ca3af]">Offline Fallback Cache</span>
-            <span className="text-[#06b6d4] font-bold">Enabled</span>
+          <div className="flex items-center justify-between py-1 border-b border-[#2d3545]">
+            <span className="text-[#94a3b8] text-[10px]">CAPTCHA Solver</span>
+            <span className="text-[#fbbf24] font-bold text-[10px]">Bitmask OCR (&lt;2ms)</span>
           </div>
           <div className="flex items-center justify-between py-1">
-            <span className="text-[#9ca3af]">Last Sync</span>
-            <span className="text-[#f3f4f6]">{lastSync ? new Date(lastSync).toLocaleTimeString() : 'Just now'}</span>
+            <span className="text-[#94a3b8] text-[10px]">Last Synced</span>
+            <span className="text-[#f8fafc] font-bold text-[10px]">
+              {lastSync ? new Date(lastSync).toLocaleTimeString() : 'Live'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Buy me a Chai Action Card */}
-      <div className="retro-card p-4 space-y-3 bg-[#111827] border-2 border-[#f59e0b]">
-        <div className="flex items-center gap-2">
-          <Coffee size={18} className="text-[#f59e0b]" />
-          <span className="font-mono text-xs font-black text-[#f59e0b] uppercase">
-            SUPPORT INDEPENDENT DEVELOPMENT
+      {/* Buy me a Chai Box - Retro Window */}
+      <div className="retro-card overflow-hidden border-2 border-[#fbbf24]">
+        <div className="bg-[#fbbf24] px-3 py-1.5 border-b-2 border-[#000000] flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[#000000]">
+            <Coffee size={14} className="stroke-[2.5]" />
+            <span className="font-mono text-[11px] font-black uppercase">
+              BUY ME A CHAI ☕
+            </span>
+          </div>
+          <span className="bg-[#000000] text-[#fbbf24] font-mono text-[9px] font-black px-1.5 py-0.2 rounded">
+            DEV SUPPORT
           </span>
         </div>
 
-        <p className="text-xs text-[#d1d5db] leading-relaxed">
-          If D-Campus saved you time from fighting the clunky ERP and CAPTCHAs, consider buying me a cutting chai!
-        </p>
+        <div className="p-3 space-y-2.5">
+          <p className="text-[10px] font-mono text-[#94a3b8] leading-normal">
+            If D-Campus saved you time from the clunky portal and CAPTCHAs, support ongoing development with a hot cup of chai!
+          </p>
 
-        <button
-          onClick={() => setShowChaiModal(true)}
-          className="w-full btn-retro btn-retro-gold py-2.5 rounded font-mono text-xs font-black flex items-center justify-center gap-2"
-        >
-          <Coffee size={14} />
-          <span>BUY ME A CHAI (₹20 / ₹50)</span>
-        </button>
+          <button
+            onClick={() => setShowChaiModal(true)}
+            className="w-full btn-retro btn-retro-gold py-2 text-xs flex items-center justify-center gap-1.5"
+          >
+            <Coffee size={13} />
+            <span>SUPPORT WITH CHAI (₹20 / ₹50)</span>
+          </button>
+        </div>
       </div>
 
       {/* Logout Action */}
-      <div className="pt-2">
+      <div className="pt-1">
         <button
           onClick={onLogout}
-          className="w-full btn-retro py-3 rounded font-mono text-xs font-bold text-[#f43f5e] hover:bg-[#f43f5e]/10 border-[#f43f5e]/40 flex items-center justify-center gap-2"
+          className="w-full btn-retro py-2.5 text-xs text-[#f43f5e] border-[#f43f5e] hover:bg-[#f43f5e]/15 flex items-center justify-center gap-2"
         >
-          <LogOut size={14} />
+          <LogOut size={13} />
           <span>LOGOUT &amp; CLEAR CREDENTIALS</span>
         </button>
       </div>
 
-      {/* App Version Info */}
-      <div className="text-center pt-2 font-mono text-[10px] text-[#6b7280]">
-        D-Campus Mobile Web App • Version 1.4.0
-        <br />
-        Built for COER University Students • Open Source
+      <div className="text-center font-mono text-[9px] text-[#64748b]">
+        D-Campus Mobile PWA • v1.4.0 • Built for COER University
       </div>
 
       {/* Chai Modal */}

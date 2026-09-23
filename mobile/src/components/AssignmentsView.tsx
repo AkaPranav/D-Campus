@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Upload, Search, FileText, Lock, Calendar, BookOpen, AlertCircle } from 'lucide-react';
+import { Download, Upload, Search, Lock, Calendar, BookOpen } from 'lucide-react';
 import { AssignmentItem } from '@/lib/erpClient';
 import SubmissionSafetyModal from './SubmissionSafetyModal';
 
@@ -38,11 +38,11 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
   const sortedItems = [...filteredItems].sort((a, b) => {
     if (activeCategory === 'ASSIGNMENT') {
       if (a.isOverdue !== b.isOverdue) {
-        return a.isOverdue ? 1 : -1; // Active first
+        return a.isOverdue ? 1 : -1;
       }
-      return new Date(a.submissionDate).getTime() - new Date(b.submissionDate).getTime();
+      return (a.dueDateTimestamp || 0) - (b.dueDateTimestamp || 0);
     }
-    return new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime();
+    return (b.dueDateTimestamp || 0) - (a.dueDateTimestamp || 0);
   });
 
   const activeAssignmentsCount = assignments.filter(
@@ -64,7 +64,7 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
 
       const blob = await res.blob();
       const contentDisposition = res.headers.get('content-disposition');
-      let filename = `${item.subjectCode}_${item.detailId}.pdf`;
+      let filename = `${item.subjectCode || 'COER'}_${item.detailId}.pdf`;
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match && match[1]) filename = match[1];
@@ -87,26 +87,26 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
   };
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-24 max-w-md mx-auto">
-      {/* Subtab Segmented Switcher */}
+    <div className="space-y-4 px-3.5 py-4 pb-24 max-w-md mx-auto">
+      {/* Subtab Segmented Switcher - Solid Retro Buttons */}
       <div className="retro-card p-1.5 flex gap-1.5">
         <button
           onClick={() => {
             setActiveCategory('ASSIGNMENT');
             setSelectedSubject('ALL');
           }}
-          className={`flex-1 py-2 rounded font-mono text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+          className={`flex-1 py-2 rounded-sm font-mono text-xs font-black flex items-center justify-center gap-1.5 transition-all border ${
             activeCategory === 'ASSIGNMENT'
-              ? 'bg-[#f59e0b] text-[#000000] shadow-[2px_2px_0px_#000000]'
-              : 'text-[#9ca3af] hover:text-[#f3f4f6]'
+              ? 'bg-[#fbbf24] text-[#000000] border-[#000000] shadow-[2px_2px_0px_#000000]'
+              : 'bg-[#080a0d] text-[#94a3b8] border-[#2d3545] hover:text-[#f8fafc]'
           }`}
         >
           <span>⚡ ACTIVE DUE</span>
           <span
-            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+            className={`text-[9px] px-1.5 py-0.2 rounded font-black border ${
               activeCategory === 'ASSIGNMENT'
-                ? 'bg-[#000000] text-[#f59e0b]'
-                : 'bg-[#1f2937] text-[#9ca3af]'
+                ? 'bg-[#000000] text-[#fbbf24] border-[#000000]'
+                : 'bg-[#1b202b] text-[#94a3b8] border-[#2d3545]'
             }`}
           >
             {activeAssignmentsCount}
@@ -118,19 +118,19 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
             setActiveCategory('STUDY_MATERIAL');
             setSelectedSubject('ALL');
           }}
-          className={`flex-1 py-2 rounded font-mono text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+          className={`flex-1 py-2 rounded-sm font-mono text-xs font-black flex items-center justify-center gap-1.5 transition-all border ${
             activeCategory === 'STUDY_MATERIAL'
-              ? 'bg-[#06b6d4] text-[#000000] shadow-[2px_2px_0px_#000000]'
-              : 'text-[#9ca3af] hover:text-[#f3f4f6]'
+              ? 'bg-[#06b6d4] text-[#000000] border-[#000000] shadow-[2px_2px_0px_#000000]'
+              : 'bg-[#080a0d] text-[#94a3b8] border-[#2d3545] hover:text-[#f8fafc]'
           }`}
         >
-          <BookOpen size={14} />
-          <span>LECTURE NOTES</span>
+          <BookOpen size={13} />
+          <span>NOTES</span>
           <span
-            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+            className={`text-[9px] px-1.5 py-0.2 rounded font-black border ${
               activeCategory === 'STUDY_MATERIAL'
-                ? 'bg-[#000000] text-[#06b6d4]'
-                : 'bg-[#1f2937] text-[#9ca3af]'
+                ? 'bg-[#000000] text-[#06b6d4] border-[#000000]'
+                : 'bg-[#1b202b] text-[#94a3b8] border-[#2d3545]'
             }`}
           >
             {lectureNotesCount}
@@ -140,17 +140,17 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
 
       {/* Search Input */}
       <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748b]" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={
             activeCategory === 'ASSIGNMENT'
-              ? 'Search assignments or subjects...'
-              : 'Search lecture notes or topics...'
+              ? 'Search active assignments or topics...'
+              : 'Search lecture notes & materials...'
           }
-          className="w-full bg-[#111827] border border-[#374151] rounded px-3 py-2 pl-9 text-xs text-[#f3f4f6] font-mono placeholder-[#6b7280] focus:outline-none focus:border-[#f59e0b] transition-colors"
+          className="w-full bg-[#080a0d] border-2 border-[#000000] rounded px-3 py-2 pl-8 text-xs text-[#f8fafc] font-mono placeholder-[#64748b] focus:outline-none focus:border-[#fbbf24] shadow-[2px_2px_0px_#000000] transition-colors"
         />
       </div>
 
@@ -159,10 +159,10 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           <button
             onClick={() => setSelectedSubject('ALL')}
-            className={`px-2.5 py-1 rounded font-mono text-[10px] font-bold shrink-0 transition-colors ${
+            className={`px-2.5 py-1 rounded-sm font-mono text-[10px] font-black shrink-0 transition-colors border ${
               selectedSubject === 'ALL'
-                ? 'bg-[#f3f4f6] text-[#000000]'
-                : 'bg-[#111827] text-[#9ca3af] border border-[#374151]'
+                ? 'bg-[#f8fafc] text-[#000000] border-[#000000] shadow-[1.5px_1.5px_0px_#000000]'
+                : 'bg-[#080a0d] text-[#94a3b8] border-[#2d3545]'
             }`}
           >
             ALL ({categoryItems.length})
@@ -174,10 +174,10 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
               <button
                 key={sub}
                 onClick={() => setSelectedSubject(sub)}
-                className={`px-2.5 py-1 rounded font-mono text-[10px] font-bold shrink-0 transition-colors truncate max-w-[160px] ${
+                className={`px-2.5 py-1 rounded-sm font-mono text-[10px] font-black shrink-0 transition-colors truncate max-w-[170px] border ${
                   isSelected
-                    ? 'bg-[#f59e0b] text-[#000000]'
-                    : 'bg-[#111827] text-[#9ca3af] border border-[#374151]'
+                    ? 'bg-[#fbbf24] text-[#000000] border-[#000000] shadow-[1.5px_1.5px_0px_#000000]'
+                    : 'bg-[#080a0d] text-[#94a3b8] border-[#2d3545]'
                 }`}
               >
                 {sub} ({count})
@@ -195,41 +195,39 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
           if (activeCategory === 'STUDY_MATERIAL') {
             // Lecture Notes Card (Zero deadlines, zero pass marks)
             return (
-              <div key={item.detailId} className="retro-card p-3.5 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[10px] font-bold text-[#06b6d4] bg-[#06b6d4]/10 px-1.5 py-0.5 rounded border border-[#06b6d4]/30">
-                        {item.subjectCode}
-                      </span>
-                      <span className="font-mono text-[10px] text-[#9ca3af] truncate">
-                        {item.subjectName}
-                      </span>
-                    </div>
-                    <h3 className="font-mono text-xs font-bold text-[#f3f4f6] leading-snug">
-                      {item.topic}
-                    </h3>
-                  </div>
-
-                  <span className="font-mono text-[9px] font-bold text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/30 shrink-0">
-                    NOTES
+              <div key={item.detailId} className="retro-card overflow-hidden">
+                <div className="retro-card-header py-1.5 px-3">
+                  <span className="font-mono text-[10px] font-black text-[#000000] bg-[#06b6d4] px-1.5 py-0.2 rounded border border-[#000000]">
+                    {item.subjectCode || 'NOTES'}
+                  </span>
+                  <span className="retro-badge safe text-[9px]">
+                    STUDY MATERIAL
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-[#1f2937]">
-                  <div className="flex items-center gap-1 text-[10px] font-mono text-[#9ca3af]">
-                    <Calendar size={11} />
-                    <span>POSTED: {item.submissionDate}</span>
+                <div className="p-3 space-y-2">
+                  <div className="text-[10px] text-[#94a3b8] font-mono truncate font-bold">
+                    {item.subjectName}
                   </div>
+                  <h3 className="font-mono text-xs font-bold text-[#f8fafc] leading-snug">
+                    {item.topic}
+                  </h3>
 
-                  <button
-                    onClick={() => handleDownload(item)}
-                    disabled={isDownloading}
-                    className="btn-retro btn-retro-cyan px-2.5 py-1 rounded text-[11px] font-mono font-bold flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <Download size={12} className={isDownloading ? 'animate-bounce' : ''} />
-                    <span>{isDownloading ? 'DOWNLOADING...' : 'DOWNLOAD'}</span>
-                  </button>
+                  <div className="flex items-center justify-between pt-1 border-t border-[#2d3545]">
+                    <div className="flex items-center gap-1 text-[10px] font-mono text-[#64748b]">
+                      <Calendar size={11} />
+                      <span>POSTED: {item.submissionDate}</span>
+                    </div>
+
+                    <button
+                      onClick={() => handleDownload(item)}
+                      disabled={isDownloading}
+                      className="btn-retro btn-retro-cyan px-2.5 py-1 text-[10px] flex items-center gap-1.5"
+                    >
+                      <Download size={11} />
+                      <span>{isDownloading ? 'DOWNLOADING...' : 'DOWNLOAD'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -239,83 +237,90 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
           return (
             <div
               key={item.detailId}
-              className={`retro-card p-3.5 space-y-2.5 ${
-                item.isOverdue ? 'opacity-70 bg-[#0f1422]' : 'bg-[#111827]'
+              className={`retro-card overflow-hidden ${
+                item.isOverdue ? 'opacity-65 bg-[#0e1218]' : ''
               }`}
             >
-              {/* Card Header & Urgency Badge */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-mono text-[10px] font-bold text-[#06b6d4] bg-[#06b6d4]/10 px-1.5 py-0.5 rounded border border-[#06b6d4]/30">
-                      {item.subjectCode}
-                    </span>
-                    <span className="font-mono text-[10px] text-[#9ca3af] truncate">
-                      {item.subjectName}
-                    </span>
-                  </div>
+              {/* Card Titlebar */}
+              <div className="retro-card-header py-1.5 px-3">
+                <span className="font-mono text-[10px] font-black text-[#000000] bg-[#06b6d4] px-1.5 py-0.2 rounded border border-[#000000]">
+                  {item.subjectCode || 'ASG'}
+                </span>
 
-                  <h3 className="font-mono text-xs font-bold text-[#f3f4f6] leading-snug">
-                    {item.topic}
-                  </h3>
-                </div>
-
-                {/* Status / Urgency Badge */}
                 {item.isOverdue ? (
-                  <span className="font-mono text-[9px] font-bold text-[#6b7280] bg-[#1f2937] px-2 py-0.5 rounded border border-[#374151] shrink-0 flex items-center gap-1">
+                  <span className="retro-badge ghost text-[9px] flex items-center gap-1">
                     <Lock size={9} />
                     CLOSED
                   </span>
                 ) : (
-                  <span className="font-mono text-[9px] font-black text-[#f59e0b] bg-[#f59e0b]/15 px-2 py-0.5 rounded border border-[#f59e0b]/40 shrink-0">
+                  <span className="retro-badge warning text-[9px]">
                     ⚡ DUE: {item.submissionDate}
                   </span>
                 )}
               </div>
 
-              {/* Marks & Date Row */}
-              <div className="flex items-center justify-between text-[10px] font-mono text-[#9ca3af] bg-[#1f2937]/60 px-2 py-1 rounded">
-                <span>Max Marks: <strong className="text-[#f3f4f6]">{item.maxMarks}</strong></span>
-                <span>Pass Marks: <strong className="text-[#10b981]">{item.passMarks}</strong></span>
-                <span>Deadline: <strong className="text-[#f59e0b]">{item.submissionDate}</strong></span>
-              </div>
+              {/* Card Body */}
+              <div className="p-3 space-y-2">
+                <div className="text-[10px] text-[#94a3b8] font-mono truncate font-bold">
+                  {item.subjectName}
+                </div>
+                <h3 className="font-mono text-xs font-bold text-[#f8fafc] leading-snug">
+                  {item.topic}
+                </h3>
 
-              {/* Action Buttons: Download PDF & Submit Solution */}
-              <div className="flex items-center gap-2 pt-1 border-t border-[#1f2937]">
-                <button
-                  onClick={() => handleDownload(item)}
-                  disabled={isDownloading}
-                  className="flex-1 btn-retro py-1.5 rounded text-[11px] font-mono font-bold text-[#06b6d4] hover:text-[#f3f4f6] flex items-center justify-center gap-1.5"
-                >
-                  <Download size={12} className={isDownloading ? 'animate-bounce' : ''} />
-                  <span>{isDownloading ? 'FETCHING...' : 'PROBLEM PDF'}</span>
-                </button>
+                {/* Inset Metrics Bar */}
+                <div className="retro-inset p-2 grid grid-cols-3 gap-1 text-[10px] font-mono text-center">
+                  <div>
+                    <span className="text-[#64748b] block text-[9px]">MAX</span>
+                    <strong className="text-[#f8fafc]">{item.maxMarks}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[#64748b] block text-[9px]">PASS</span>
+                    <strong className="text-[#10b981]">{item.passMarks}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[#64748b] block text-[9px]">DEADLINE</span>
+                    <strong className="text-[#fbbf24]">{item.submissionDate}</strong>
+                  </div>
+                </div>
 
-                {item.isOverdue ? (
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 pt-1 border-t border-[#2d3545]">
                   <button
-                    disabled
-                    className="flex-1 btn-retro py-1.5 rounded text-[11px] font-mono font-bold text-[#6b7280] bg-[#1f2937] cursor-not-allowed opacity-60 flex items-center justify-center gap-1"
+                    onClick={() => handleDownload(item)}
+                    disabled={isDownloading}
+                    className="flex-1 btn-retro py-1.5 text-[10px] text-[#06b6d4] hover:text-[#ffffff] flex items-center justify-center gap-1"
                   >
-                    <Lock size={12} />
-                    <span>CLOSED</span>
+                    <Download size={11} />
+                    <span>{isDownloading ? 'FETCHING...' : 'PROBLEM PDF'}</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => setSubmittingAssignment(item)}
-                    className="flex-1 btn-retro btn-retro-gold py-1.5 rounded text-[11px] font-mono font-black flex items-center justify-center gap-1.5"
-                  >
-                    <Upload size={12} />
-                    <span>SUBMIT</span>
-                  </button>
-                )}
+
+                  {item.isOverdue ? (
+                    <button
+                      disabled
+                      className="flex-1 btn-retro py-1.5 text-[10px] text-[#64748b] flex items-center justify-center gap-1"
+                    >
+                      <Lock size={11} />
+                      <span>CLOSED</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSubmittingAssignment(item)}
+                      className="flex-1 btn-retro btn-retro-gold py-1.5 text-[10px] flex items-center justify-center gap-1"
+                    >
+                      <Upload size={11} />
+                      <span>SUBMIT</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
 
         {sortedItems.length === 0 && (
-          <div className="retro-card p-6 text-center text-[#9ca3af] font-mono text-xs">
-            No items matching your criteria.
+          <div className="retro-card p-6 text-center text-[#94a3b8] font-mono text-xs">
+            [NO ASSIGNMENTS MATCHING CRITERIA]
           </div>
         )}
       </div>
@@ -326,7 +331,7 @@ export default function AssignmentsView({ assignments, sessionCookies }: Assignm
           assignment={submittingAssignment}
           onClose={() => setSubmittingAssignment(null)}
           onSubmitSuccess={(detailId) => {
-            alert('Assignment submitted successfully! Submission ID: ' + detailId);
+            alert('Assignment submitted successfully! Detail ID: ' + detailId);
           }}
         />
       )}

@@ -38,12 +38,11 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Authentication failed. Please check credentials.');
+        setErrorMessage(data.error || 'Authentication failed. Please verify credentials.');
         setIsLoading(false);
         return;
       }
 
-      // Save credentials in client storage if rememberMe is enabled
       if (rememberMe) {
         localStorage.setItem('dcampus_user', userId.trim());
         localStorage.setItem('dcampus_pass', password.trim());
@@ -53,7 +52,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       onLoginSuccess(userId.trim(), password.trim(), data.student, data.sessionCookies || '');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setErrorMessage(message || 'Network error occurred. Please try again.');
+      setErrorMessage(message || 'Network connection failed. Please retry.');
       setIsLoading(false);
     }
   };
@@ -61,123 +60,133 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   return (
     <div className="min-h-[100dvh] flex flex-col justify-center px-4 py-8 max-w-md mx-auto">
       {/* Brand Header */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 bg-[#111827] px-3 py-1 rounded border border-[#374151] mb-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]" />
-          <span className="font-mono text-xs font-black text-[#f59e0b] tracking-wider">
+      <div className="text-center mb-5 select-none">
+        <div className="inline-flex items-center gap-1.5 bg-[#161c28] px-2.5 py-1 rounded border-2 border-[#000000] shadow-[2px_2px_0px_#000000] mb-2">
+          <span className="retro-dot min" />
+          <span className="font-mono text-[10px] font-black text-[#fbbf24] tracking-wider uppercase">
             STUDENT SUITE // MOBILE
           </span>
         </div>
-        <h1 className="text-3xl font-black font-mono tracking-tight text-[#f3f4f6]">
+        <h1 className="text-2xl font-black font-mono tracking-tight text-[#f8fafc]">
           D-CAMPUS
         </h1>
-        <p className="text-xs text-[#9ca3af] mt-1">
-          Zero-CAPTCHA • 24/7 Keep-Alive • Unified Academic Hub
+        <p className="text-[11px] font-mono text-[#94a3b8] mt-0.5">
+          Zero-CAPTCHA • Background Sync • Academic OS
         </p>
       </div>
 
-      {/* Main Login Card */}
-      <div className="retro-card p-5 space-y-4">
-        <div className="border-b border-[#374151] pb-2.5 flex items-center justify-between">
-          <span className="font-mono text-xs font-bold text-[#f59e0b]">
-            🔐 ONE-TIME SETUP
-          </span>
-          <span className="text-[10px] text-[#9ca3af]">
-            Saves on device
+      {/* Main Login Card - Authentic Retro Window */}
+      <div className="retro-card overflow-hidden">
+        {/* Retro Window Bar */}
+        <div className="retro-card-header">
+          <div className="flex items-center gap-1.5">
+            <span className="retro-dot close" />
+            <span className="retro-dot min" />
+            <span className="retro-dot max" />
+            <span className="text-[#2d3545] font-mono text-xs ml-1">|</span>
+            <span className="font-mono text-[11px] font-black text-[#fbbf24] uppercase ml-1">
+              LOGIN_PORTAL.EXE
+            </span>
+          </div>
+          <span className="text-[9px] font-mono text-[#64748b] uppercase">
+            SETUP ONCE
           </span>
         </div>
 
-        {errorMessage && (
-          <div className="bg-[#f43f5e]/10 border border-[#f43f5e] p-2.5 rounded text-[11px] text-[#f43f5e] font-mono leading-tight">
-            ⚠️ {errorMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* User ID Field */}
-          <div>
-            <label className="block text-[11px] font-mono font-bold text-[#9ca3af] mb-1">
-              STUDENT ID / USER ID
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#9ca3af]">
-                <User size={15} />
-              </span>
-              <input
-                type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="e.g. CU240250963"
-                autoCapitalize="characters"
-                required
-                className="w-full bg-[#0b0f19] border border-[#374151] rounded px-3 py-2.5 pl-9 text-sm text-[#f3f4f6] font-mono placeholder-[#4b5563] focus:outline-none focus:border-[#f59e0b]"
-              />
+        <div className="p-4 space-y-4">
+          {errorMessage && (
+            <div className="bg-[#f43f5e]/10 border-2 border-[#000000] p-2 rounded shadow-[2px_2px_0px_#000000] text-[11px] text-[#f43f5e] font-mono font-bold leading-tight">
+              ⚠️ {errorMessage}
             </div>
-          </div>
+          )}
 
-          {/* Password Field with Eye Toggle */}
-          <div>
-            <label className="block text-[11px] font-mono font-bold text-[#9ca3af] mb-1">
-              PASSWORD
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#9ca3af]">
-                <Lock size={15} />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Portal password"
-                required
-                className="w-full bg-[#0b0f19] border border-[#374151] rounded px-3 py-2.5 pl-9 pr-10 text-sm text-[#f3f4f6] font-mono placeholder-[#4b5563] focus:outline-none focus:border-[#f59e0b]"
-              />
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* User ID Field */}
+            <div>
+              <label className="block text-[10px] font-mono font-bold text-[#94a3b8] mb-1 uppercase">
+                STUDENT ID / USERNAME
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="e.g. CU240250963"
+                  autoCapitalize="characters"
+                  required
+                  className="w-full bg-[#080a0d] border-2 border-[#000000] rounded px-3 py-2 text-xs font-mono text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:border-[#fbbf24] shadow-[2px_2px_0px_#000000] transition-colors"
+                />
+                <User size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b]" />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label className="block text-[10px] font-mono font-bold text-[#94a3b8] mb-1 uppercase">
+                PORTAL PASSWORD
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter ERP password"
+                  required
+                  className="w-full bg-[#080a0d] border-2 border-[#000000] rounded px-3 py-2 text-xs font-mono text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:border-[#fbbf24] shadow-[2px_2px_0px_#000000] pr-10 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#f8fafc] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-Login Checkbox */}
+            <div className="flex items-center justify-between pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="accent-[#fbbf24] w-3.5 h-3.5 rounded cursor-pointer"
+                />
+                <span className="text-[10px] font-mono font-bold text-[#94a3b8]">
+                  REMEMBER THIS DEVICE
+                </span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-1">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#9ca3af] hover:text-[#f3f4f6]"
+                type="submit"
+                disabled={isLoading}
+                className="w-full btn-retro btn-retro-gold py-2.5 rounded font-mono text-xs font-black flex items-center justify-center gap-2"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {isLoading ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>SOLVING CAPTCHA &amp; LOGGING IN...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={13} />
+                    <span>AUTHENTICATE &amp; SYNC</span>
+                  </>
+                )}
               </button>
             </div>
-          </div>
+          </form>
 
-          {/* Remember Credentials Checkbox */}
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="remember"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="accent-[#10b981] w-4 h-4 cursor-pointer"
-            />
-            <label htmlFor="remember" className="text-xs text-[#d1d5db] cursor-pointer select-none">
-              Remember credentials & auto-login on this phone
-            </label>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full btn-retro btn-retro-gold py-3 text-xs tracking-wider uppercase flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
-          >
-            {isLoading ? (
-              <>
-                <span className="inline-block w-3.5 h-3.5 border-2 border-[#000000] border-t-transparent rounded-full animate-spin" />
-                <span>SOLVING CAPTCHA & LOGGING IN…</span>
-              </>
-            ) : (
-              <span>⚡ LOGIN TO D-CAMPUS</span>
-            )}
-          </button>
-        </form>
-
-        {/* Security / Privacy Trust Guarantee */}
-        <div className="pt-2 text-center">
-          <div className="inline-flex items-center gap-1.5 text-[10px] text-[#9ca3af] font-mono">
-            <ShieldCheck size={13} className="text-[#10b981]" />
-            <span>100% On-Device • CAPTCHA solved automatically in backend</span>
+          {/* Privacy Note */}
+          <div className="retro-inset p-2.5 text-[10px] font-mono text-[#64748b] leading-normal flex items-start gap-2">
+            <ShieldCheck size={16} className="text-[#10b981] shrink-0 mt-0.5" />
+            <span>
+              Credentials are encrypted and saved solely on your device. CAPTCHAs are resolved automatically in &lt;2ms in the background.
+            </span>
           </div>
         </div>
       </div>

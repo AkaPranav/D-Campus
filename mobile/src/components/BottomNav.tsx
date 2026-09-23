@@ -11,7 +11,7 @@ interface BottomNavProps {
   assignmentCount?: number;
 }
 
-export default function BottomNav({ activeTab, onChangeTab, assignmentCount = 16 }: BottomNavProps) {
+export default function BottomNav({ activeTab, onChangeTab, assignmentCount = 12 }: BottomNavProps) {
   const tabs = [
     {
       id: 'attendance' as ActiveTab,
@@ -37,7 +37,7 @@ export default function BottomNav({ activeTab, onChangeTab, assignmentCount = 16
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#111827] border-t border-[#374151] pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#13171f] border-t-2 border-[#000000] pb-safe shadow-[0_-2px_0px_#000000]">
       <div className="flex items-center justify-around h-16 max-w-md mx-auto px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -48,24 +48,24 @@ export default function BottomNav({ activeTab, onChangeTab, assignmentCount = 16
               key={tab.id}
               onClick={() => onChangeTab(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1 relative transition-colors ${
-                isActive ? 'text-[#f59e0b]' : 'text-[#9ca3af] hover:text-[#f3f4f6]'
+                isActive ? 'text-[#fbbf24]' : 'text-[#64748b] hover:text-[#94a3b8]'
               }`}
             >
-              {/* Active Tab Top Indicator Bar */}
+              {/* Solid Active Tab Top Notch - ZERO GLOW */}
               {isActive && (
-                <span className="absolute top-0 left-4 right-4 h-0.5 bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]" />
+                <span className="absolute top-0 left-2 right-2 h-1 bg-[#fbbf24] border-b border-[#000000]" />
               )}
 
               <div className="relative">
                 <Icon size={20} className={isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'} />
                 {tab.badge && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-[#f59e0b] text-[#000000] font-mono font-bold text-[9px] px-1 rounded-full border border-[#000000] leading-tight">
+                  <span className="absolute -top-1.5 -right-3 bg-[#fbbf24] text-[#000000] font-mono font-black text-[9px] px-1 rounded border border-[#000000] leading-none py-0.5">
                     {tab.badge}
                   </span>
                 )}
               </div>
 
-              <span className="font-mono text-[9px] font-bold mt-1 tracking-tight">
+              <span className="font-mono text-[9px] font-black mt-1 tracking-tight uppercase">
                 {tab.label}
               </span>
             </button>
