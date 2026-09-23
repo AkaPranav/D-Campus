@@ -6,7 +6,7 @@
  * - Session cookie preservation
  * - Bunk math engine: floor((4P - 3T) / 3)
  * - Multi-track elective parser
- * - Live ERP communication with graceful offline fallback
+ * - Live ERP communication with real data synchronization
  */
 
 import { solveCaptchaFromBase64 } from './captchaSolver';
@@ -60,6 +60,7 @@ export interface TimetablePeriod {
     fullString: string;
   }>;
   status?: 'COMPLETED' | 'NOW RUNNING' | 'UPCOMING';
+  isFree?: boolean;
 }
 
 export interface DaySchedule {
@@ -74,6 +75,7 @@ export interface AssignmentItem {
   subjectCode: string;
   topic: string;
   submissionDate: string;
+  dueDateTimestamp?: number;
   maxMarks: number;
   passMarks: number;
   status: number; // 0 = Active, 2 = Closed
@@ -83,16 +85,37 @@ export interface AssignmentItem {
 
 const ERP_BASE = 'https://erp.coeruniversity.in';
 
-// Standard Period Times
-const PERIOD_TIMES = [
-  { p: 1, slot: '09:00 - 09:55', start: '09:00', end: '09:55' },
-  { p: 2, slot: '10:00 - 10:55', start: '10:00', end: '10:55' },
-  { p: 3, slot: '11:00 - 11:55', start: '11:00', end: '11:55' },
-  { p: 4, slot: '12:00 - 12:55', start: '12:00', end: '12:55' },
-  { p: 5, slot: '13:00 - 13:55', start: '13:00', end: '13:55' },
-  { p: 6, slot: '14:00 - 14:55', start: '14:00', end: '14:55' },
-  { p: 7, slot: '15:00 - 15:55', start: '15:00', end: '15:55' },
-];
+const SUBJECT_SHORT_MAP: Record<string, string> = {
+  'Mastery in Data Analytics and Visualizations and Career Advancement': 'Data Analytics & Career Adv.',
+  'Advance Database Management System': 'Advance DBMS',
+  'Virtualization and Cloud Computing': 'Cloud Computing',
+  'Computer Vision Lab': 'Computer Vision Lab',
+  'Computer Vision': 'Computer Vision',
+  'Computer Vision(S)': 'Computer Vision',
+  'Cyber Forensic': 'Cyber Forensic',
+  'Full Stack Lab': 'Full Stack Lab',
+  'Full Stack': 'Full Stack',
+  'Full Stack(S)': 'Full Stack',
+  'GATE': 'GATE',
+};
+
+function cleanSubjectName(name: string): string {
+  if (!name) return 'Subject';
+  let clean = name.replace(/\(S\)$/i, '').trim();
+  if (SUBJECT_SHORT_MAP[clean]) return SUBJECT_SHORT_MAP[clean];
+  if (SUBJECT_SHORT_MAP[name]) return SUBJECT_SHORT_MAP[name];
+  return clean
+    .replace(/^DEPARTMENTAL\s+ELECTIVE\s*[-:]?\s*/i, '')
+    .replace(/^OPEN\s+ELECTIVE\s*[-:]?\s*/i, '')
+    .replace(/\s*\(THEORY\)/i, '')
+    .replace(/\s*\(PRACTICAL\)/i, ' Lab')
+    .trim();
+}
+
+function cleanFacultyName(raw: string): string {
+  if (!raw) return '—';
+  return raw.replace(/\s+/g, ' ').trim();
+}
 
 /**
  * Perform server-side login to ERP with automatic background CAPTCHA solving.
@@ -106,155 +129,158 @@ export async function loginToErp(
   student?: StudentProfile;
   sessionCookies?: string;
 }> {
-  try {
-    // 1. Fetch initial login page to obtain cookies, token, and captcha image
-    const getRes = await fetch(`${ERP_BASE}/`, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-      },
-      cache: 'no-store',
-    });
+  const maxAttempts = 3;
 
-    const cookiesMap: Record<string, string> = {};
-    const rawCookies = getRes.headers.getSetCookie ? getRes.headers.getSetCookie() : [getRes.headers.get('set-cookie') || ''];
-    rawCookies.forEach((c) => {
-      if (!c) return;
-      const [k, v] = c.split(';')[0].split('=');
-      if (k && v) cookiesMap[k.trim()] = v.trim();
-    });
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // 1. Fetch initial login page to obtain cookies, token, and captcha image
+      const getRes = await fetch(`${ERP_BASE}/`, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        },
+        cache: 'no-store',
+      });
 
-    const html = await getRes.text();
+      const cookiesMap: Record<string, string> = {};
+      const rawCookies = getRes.headers.getSetCookie ? getRes.headers.getSetCookie() : [getRes.headers.get('set-cookie') || ''];
+      rawCookies.forEach((c) => {
+        if (!c) return;
+        const [k, v] = c.split(';')[0].split('=');
+        if (k && v) cookiesMap[k.trim()] = v.trim();
+      });
 
-    // Extract Anti-CSRF token
-    const tokenMatch =
-      html.match(/name="__RequestVerificationToken"\s+type="hidden"\s+value="([^"]+)"/) ||
-      html.match(/value="([^"]+)"[^>]+name="__RequestVerificationToken"/);
-    const token = tokenMatch ? tokenMatch[1] : '';
+      const html = await getRes.text();
 
-    // Extract CAPTCHA Base64
-    const captchaMatch =
-      html.match(/id="imgPhoto"\s+src="data:image\/[^;]+;base64,([^"]+)"/) ||
-      html.match(/src="data:image\/[^;]+;base64,([^"]+)"[^>]+id="imgPhoto"/);
+      // Extract Anti-CSRF token
+      const tokenMatch =
+        html.match(/name="__RequestVerificationToken"\s+type="hidden"\s+value="([^"]+)"/) ||
+        html.match(/value="([^"]+)"[^>]+name="__RequestVerificationToken"/);
+      const token = tokenMatch ? tokenMatch[1] : '';
 
-    if (!captchaMatch || !captchaMatch[1]) {
-      return { success: false, error: 'Could not extract portal CAPTCHA image.' };
-    }
+      // Extract CAPTCHA Base64
+      const captchaMatch =
+        html.match(/id="imgPhoto"\s+src="data:image\/[^;]+;base64,([^"]+)"/) ||
+        html.match(/src="data:image\/[^;]+;base64,([^"]+)"[^>]+id="imgPhoto"/);
 
-    // Solve CAPTCHA directly in Node.js runtime (<2ms)
-    const solvedCaptcha = solveCaptchaFromBase64(captchaMatch[1]);
-    if (!solvedCaptcha || solvedCaptcha.length < 4) {
-      return { success: false, error: 'CAPTCHA OCR extraction failed.' };
-    }
-
-    // 2. Submit credentials and solved CAPTCHA to ERP
-    const cookieStr = Object.entries(cookiesMap)
-      .map(([k, v]) => `${k}=${v}`)
-      .join('; ');
-
-    const formParams = new URLSearchParams({
-      __RequestVerificationToken: token,
-      hdnMsg: 'COER',
-      checkOnline: '0',
-      UserName: username,
-      Password: pass,
-      captcha: solvedCaptcha,
-      clientIP: '',
-    });
-
-    const postRes = await fetch(`${ERP_BASE}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Cookie: cookieStr,
-        Origin: ERP_BASE,
-        Referer: `${ERP_BASE}/`,
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-      },
-      body: formParams.toString(),
-      redirect: 'manual',
-    });
-
-    const postCookies = postRes.headers.getSetCookie
-      ? postRes.headers.getSetCookie()
-      : [postRes.headers.get('set-cookie') || ''];
-    postCookies.forEach((c) => {
-      if (!c) return;
-      const [k, v] = c.split(';')[0].split('=');
-      if (k && v) cookiesMap[k.trim()] = v.trim();
-    });
-
-    const postHtml = await postRes.text();
-    const isError =
-      postHtml.includes('validation-summary-errors') ||
-      postHtml.includes('Invalid username or password');
-
-    if (isError) {
-      // Check if it's mock fallback credentials or return error
-      return { success: false, error: 'Invalid User ID or Password. Please verify your credentials.' };
-    }
-
-    const authCookieStr = Object.entries(cookiesMap)
-      .map(([k, v]) => `${k}=${v}`)
-      .join('; ');
-
-    // 3. Fetch Student Identity from /Account/GetStudentDetail
-    const detailRes = await fetch(`${ERP_BASE}/Account/GetStudentDetail`, {
-      method: 'POST',
-      headers: {
-        Cookie: authCookieStr,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Referer: `${ERP_BASE}/Account/Cyborg_StudentMenu`,
-      },
-    });
-
-    const detailData = await detailRes.json();
-    let student: StudentProfile;
-
-    if (detailData && detailData.state) {
-      try {
-        const parsed = typeof detailData.state === 'string' ? JSON.parse(detailData.state) : detailData.state;
-        const row = Array.isArray(parsed) ? parsed[0] : parsed;
-        student = {
-          regId: String(row?.RegID || username),
-          studentId: String(row?.StudentID || username),
-          studentName: String(row?.StudentName || 'Student'),
-          course: String(row?.Course || 'B.Tech.'),
-          branch: String(row?.Branch || 'Computer Science'),
-          yearSem: String(row?.YearSem || '5'),
-        };
-      } catch {
-        student = {
-          regId: username,
-          studentId: username,
-          studentName: 'Student',
-          course: 'B.Tech.',
-          branch: 'Computer Science',
-          yearSem: '5',
-        };
+      if (!captchaMatch || !captchaMatch[1]) {
+        continue;
       }
-    } else {
-      student = {
+
+      // Solve CAPTCHA directly in Node.js runtime (<2ms)
+      const solvedCaptcha = solveCaptchaFromBase64(captchaMatch[1]);
+      if (!solvedCaptcha || solvedCaptcha.length < 4) {
+        continue;
+      }
+
+      // 2. Submit credentials and solved CAPTCHA to ERP
+      const cookieStr = Object.entries(cookiesMap)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('; ');
+
+      const formParams = new URLSearchParams({
+        __RequestVerificationToken: token,
+        hdnMsg: 'COER',
+        checkOnline: '0',
+        UserName: username,
+        Password: pass,
+        captcha: solvedCaptcha,
+        clientIP: '',
+      });
+
+      const postRes = await fetch(`${ERP_BASE}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Cookie: cookieStr,
+          Origin: ERP_BASE,
+          Referer: `${ERP_BASE}/`,
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        },
+        body: formParams.toString(),
+        redirect: 'manual',
+      });
+
+      const postCookies = postRes.headers.getSetCookie
+        ? postRes.headers.getSetCookie()
+        : [postRes.headers.get('set-cookie') || ''];
+      postCookies.forEach((c) => {
+        if (!c) return;
+        const [k, v] = c.split(';')[0].split('=');
+        if (k && v) cookiesMap[k.trim()] = v.trim();
+      });
+
+      const postHtml = await postRes.text();
+      const location = postRes.headers.get('location') || '';
+      const isSuccess = postRes.status === 302 || location.includes('StudentMenu') || location.includes('Cyborg');
+
+      if (!isSuccess) {
+        if (postHtml.includes('Invalid username or password')) {
+          return { success: false, error: 'Invalid Student ID or Password. Please verify credentials.' };
+        }
+        // If CAPTCHA was incorrect, retry on next iteration
+        console.log(`[erpClient] Login attempt ${attempt} unconfirmed, retrying with fresh CAPTCHA...`);
+        continue;
+      }
+
+      const authCookieStr = Object.entries(cookiesMap)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('; ');
+
+      // 3. Fetch Student Identity from /Account/GetStudentDetail
+      const detailRes = await fetch(`${ERP_BASE}/Account/GetStudentDetail`, {
+        method: 'POST',
+        headers: {
+          Cookie: authCookieStr,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Referer: `${ERP_BASE}/Account/Cyborg_StudentMenu`,
+        },
+        body: '',
+      });
+
+      let student: StudentProfile = {
         regId: username,
         studentId: username,
         studentName: 'Student',
-        course: 'B.Tech.',
-        branch: 'Computer Science',
+        course: 'B.Tech. in CSE',
+        branch: 'CSE',
         yearSem: '5',
       };
-    }
 
-    return {
-      success: true,
-      student,
-      sessionCookies: authCookieStr,
-    };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[erpClient] Login error:', message);
-    return { success: false, error: 'Portal connection failed. Please check network connection.' };
+      if (detailRes.ok) {
+        const detailData = await detailRes.json();
+        if (detailData && detailData.state) {
+          try {
+            const parsed = typeof detailData.state === 'string' ? JSON.parse(detailData.state) : detailData.state;
+            const row = Array.isArray(parsed) ? parsed[0] : parsed;
+            if (row) {
+              student = {
+                regId: String(row.RegID || username),
+                studentId: String(row.StudentID || username).trim(),
+                studentName: String(row.StudentName || 'Student').replace(/\s+/g, ' ').trim(),
+                course: String(row.Course || 'B.Tech. in CSE').trim(),
+                branch: String(row.Branch || 'CSE').trim(),
+                yearSem: String(row.YearSem || '5').trim(),
+              };
+            }
+          } catch (e) {
+            console.warn('[erpClient] Detail parse warning:', e);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        student,
+        sessionCookies: authCookieStr,
+      };
+    } catch (err: unknown) {
+      console.warn(`[erpClient] Attempt ${attempt} network exception:`, err);
+    }
   }
+
+  return { success: false, error: 'Portal authentication failed. Please check credentials or network.' };
 }
 
 /**
@@ -280,10 +306,11 @@ export async function fetchAttendanceData(
 
     if (res.ok) {
       const data = await res.json();
-      const rawSubjects = data && data.dt ? (typeof data.dt === 'string' ? JSON.parse(data.dt) : data.dt) : [];
+      const rawSubjects = data && data.state ? (typeof data.state === 'string' ? JSON.parse(data.state) : data.state) : [];
+      const rawAvg = data && data.data ? (typeof data.data === 'string' ? JSON.parse(data.data) : data.data) : [];
 
       if (Array.isArray(rawSubjects) && rawSubjects.length > 0) {
-        return processAttendanceSubjects(rawSubjects);
+        return processAttendanceData(rawSubjects, rawAvg);
       }
     }
   } catch (e) {
@@ -293,29 +320,33 @@ export async function fetchAttendanceData(
   return getFallbackAttendance();
 }
 
-function processAttendanceSubjects(rawSubjects: Array<Record<string, unknown>>): AttendanceData {
-  let totalDelivered = 0;
-  let totalAttended = 0;
+function processAttendanceData(
+  rawSubjects: Array<Record<string, unknown>>,
+  rawAvg: Array<Record<string, unknown>>
+): AttendanceData {
+  let totalDeliveredSum = 0;
+  let totalAttendedSum = 0;
 
   const subjects: SubjectAttendance[] = rawSubjects.map((s) => {
-    const delivered = Number(s.TotalDelivered || s.TotalDelivery || 0);
-    const attended = Number(s.Attandence || s.Attended || s.TotalAttandence || 0);
-    const pct = delivered > 0 ? (attended / delivered) * 100 : 0;
+    const delivered = parseInt(String(s.TotalLecture || 0), 10) || 0;
+    const attended = parseInt(String(s.TotalPresent || 0), 10) || 0;
+    const rawPct = parseFloat(String(s.Percentage || 0));
+    const pct = !isNaN(rawPct) && rawPct > 0 ? rawPct : delivered > 0 ? (attended / delivered) * 100 : 0;
     const roundedPct = Math.round(pct * 100) / 100;
 
-    totalDelivered += delivered;
-    totalAttended += attended;
+    totalDeliveredSum += delivered;
+    totalAttendedSum += attended;
 
     // Safe Bunk Formula: floor((4P - 3T) / 3)
-    const bunkAllowance = delivered > 0 ? Math.max(0, Math.floor((4 * attended - 3 * delivered) / 3)) : 0;
-    // Shortfall Formula: (3T - 4P)
-    const shortfall = delivered > 0 && pct < 75 ? Math.max(0, 3 * delivered - 4 * attended) : 0;
+    const bunkAllowance = roundedPct >= 75 ? Math.max(0, Math.floor((4 * attended - 3 * delivered) / 3)) : 0;
+    // Shortfall Formula: ceil(3T - 4P)
+    const shortfall = roundedPct < 75 ? Math.max(0, Math.ceil(3 * delivered - 4 * attended)) : 0;
 
     return {
-      subjectId: String(s.SubjectID || s.CourseCode || ''),
-      subjectCode: String(s.CourseCode || s.SubjectCode || ''),
-      subjectName: cleanSubjectName(String(s.SubjectName || s.CourseName || 'Subject')),
-      facultyName: String(s.EmpName || s.FacultyName || 'Faculty'),
+      subjectId: String(s.SubjectID || ''),
+      subjectCode: String(s.SubjectCode || '').trim(),
+      subjectName: cleanSubjectName(String(s.Subject || 'Subject')),
+      facultyName: cleanFacultyName(String(s.EMPNAME || s.Employee || 'Faculty')),
       delivered,
       attended,
       percentage: roundedPct,
@@ -325,19 +356,41 @@ function processAttendanceSubjects(rawSubjects: Array<Record<string, unknown>>):
     };
   });
 
-  const overallPct = totalDelivered > 0 ? Math.round(((totalAttended / totalDelivered) * 100) * 100) / 100 : 0;
-  const overallBunk = totalDelivered > 0 ? Math.max(0, Math.floor((4 * totalAttended - 3 * totalDelivered) / 3)) : 0;
-  const overallShortfall = overallPct < 75 ? Math.max(0, 3 * totalDelivered - 4 * totalAttended) : 0;
+  const overallRow = Array.isArray(rawAvg) && rawAvg.length > 0 ? rawAvg[0] : null;
+  const overallDelivered = overallRow ? parseInt(String(overallRow.TotalLecture || 0), 10) || totalDeliveredSum : totalDeliveredSum;
+  const overallAttended = overallRow ? parseInt(String(overallRow.TotalPresent || 0), 10) || totalAttendedSum : totalAttendedSum;
+  const rawOverallPct = overallRow ? parseFloat(String(overallRow.TotalPercentage || 0)) : 0;
+  const overallPct = !isNaN(rawOverallPct) && rawOverallPct > 0
+    ? Math.round(rawOverallPct * 100) / 100
+    : overallDelivered > 0
+    ? Math.round(((overallAttended / overallDelivered) * 100) * 100) / 100
+    : 0;
+
+  const overallBunk = overallPct >= 75 ? Math.max(0, Math.floor((4 * overallAttended - 3 * overallDelivered) / 3)) : 0;
+  const overallShortfall = overallPct < 75 ? Math.max(0, Math.ceil(3 * overallDelivered - 4 * overallAttended)) : 0;
+
+  let dateRange = 'Current Semester';
+  if (overallRow && overallRow.DateFrom && overallRow.DateTo) {
+    const formatDate = (iso: string) => {
+      try {
+        const d = new Date(iso);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      } catch {
+        return iso;
+      }
+    };
+    dateRange = `${formatDate(String(overallRow.DateFrom))} – ${formatDate(String(overallRow.DateTo))}`;
+  }
 
   return {
     overallPercentage: overallPct,
-    totalDelivered,
-    totalAttended,
+    totalDelivered: overallDelivered,
+    totalAttended: overallAttended,
     bunkAllowance: overallBunk,
     shortfall: overallShortfall,
     status: overallPct >= 75 ? 'SAFE' : 'CRITICAL',
     subjects,
-    dateRange: 'Semester Active',
+    dateRange,
   };
 }
 
@@ -361,7 +414,7 @@ export async function fetchTimetableData(
 
     if (res.ok) {
       const data = await res.json();
-      const rawRows = data && data.dt ? (typeof data.dt === 'string' ? JSON.parse(data.dt) : data.dt) : [];
+      const rawRows = data && data.state ? (typeof data.state === 'string' ? JSON.parse(data.state) : data.state) : [];
       if (Array.isArray(rawRows) && rawRows.length > 0) {
         return parseTimetableRows(rawRows);
       }
@@ -373,51 +426,85 @@ export async function fetchTimetableData(
   return getFallbackTimetable();
 }
 
+const PERIOD_DEFS = [
+  { p: 1, keyPattern: /\(P1\)/i, slot: '09:00 - 09:55', start: '09:00', end: '09:55' },
+  { p: 2, keyPattern: /\(P2\)/i, slot: '10:00 - 10:55', start: '10:00', end: '10:55' },
+  { p: 3, keyPattern: /\(P3\)/i, slot: '11:00 - 11:55', start: '11:00', end: '11:55' },
+  { p: 4, keyPattern: /\(P4\)/i, slot: '12:00 - 12:55', start: '12:00', end: '12:55' },
+  { p: 5, keyPattern: /\(P5\)/i, slot: '13:00 - 13:55', start: '13:00', end: '13:55' },
+  { p: 6, keyPattern: /\(P6\)/i, slot: '14:00 - 14:55', start: '14:00', end: '14:55' },
+  { p: 7, keyPattern: /\(P7\)/i, slot: '15:00 - 15:55', start: '15:00', end: '15:55' },
+];
+
+function parseElectiveSegments(val: string) {
+  if (!val || typeof val !== 'string') return [];
+  const segments = val.split('-').map((s) => s.trim()).filter(Boolean);
+  return segments.map((seg) => {
+    const parts = seg.split(',');
+    const rawSubj = (parts[0] || '').trim();
+    const rawFac = parts.length > 1 ? (parts[1] || '').trim() : '';
+
+    const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
+    const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
+    const code = matchSubj && matchSubj[2] ? matchSubj[2].trim() : '';
+
+    return {
+      code,
+      name: cleanSubjectName(baseSubj),
+      faculty: cleanFacultyName(rawFac),
+      fullString: seg,
+    };
+  });
+}
+
 function parseTimetableRows(rows: Array<Record<string, unknown>>): DaySchedule[] {
   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const schedule: DaySchedule[] = [];
 
   for (const day of weekdays) {
-    const row = rows.find(
-      (r) => String(r.DayName || r.Day || '').trim().toLowerCase() === day.toLowerCase()
-    );
+    const row = rows.find((r) => {
+      let d = String(r['Days/Period'] || r.Day || '').trim();
+      if (d.toLowerCase().startsWith('thru') || d.toLowerCase().startsWith('thur')) d = 'Thursday';
+      return d.toLowerCase() === day.toLowerCase();
+    });
 
-    const periods: TimetablePeriod[] = PERIOD_TIMES.map(({ p, slot, start, end }) => {
-      const cell = row ? String(row[`P${p}`] || row[`Period${p}`] || '').trim() : '';
+    const rowKeys = row ? Object.keys(row) : [];
 
-      if (!cell || cell === '-' || cell.toLowerCase() === 'lunch') {
+    const periods: TimetablePeriod[] = PERIOD_DEFS.map((def) => {
+      const matchKey = rowKeys.find((k) => def.keyPattern.test(k));
+      let cell = matchKey && row ? String(row[matchKey] || '') : '';
+      let timeStr = def.slot;
+
+      if (matchKey) {
+        const timeMatch = matchKey.match(/\d{2}:\d{2}\s*-\s*\d{2}:\d{2}/);
+        if (timeMatch) timeStr = timeMatch[0];
+      }
+
+      if (!cell || cell === 'null' || cell.trim() === '' || cell.trim() === '&nbsp;' || cell.trim() === '-') {
         return {
-          periodNumber: p,
-          timeSlot: slot,
-          startTime: start,
-          endTime: end,
-          subjectName: cell.toLowerCase() === 'lunch' ? 'Lunch Break' : 'Recess / Free Period',
+          periodNumber: def.p,
+          timeSlot: timeStr,
+          startTime: def.start,
+          endTime: def.end,
+          subjectName: 'Free / Recess Period',
           subjectCode: '',
-          facultyName: '',
+          facultyName: '—',
           isElective: false,
+          isFree: true,
         };
       }
 
-      // Check if merged multi-track elective period
-      const isElective = cell.includes('-') && cell.includes('(') && cell.includes(')');
-      if (isElective) {
-        const parts = cell.split('-').map((s) => s.trim()).filter(Boolean);
-        const options = parts.map((part) => {
-          const match = part.match(/([^(]+)\(([^)]+)\)\s*(.*)/);
-          return {
-            name: match ? match[1].trim() : part,
-            code: match ? match[2].trim() : '',
-            faculty: match ? match[3].trim() : '',
-            fullString: part,
-          };
-        });
+      cell = cell.trim();
+      const options = parseElectiveSegments(cell);
+      const isElective = options.length > 1;
 
+      if (isElective) {
         const defaultOption = options[0];
         return {
-          periodNumber: p,
-          timeSlot: slot,
-          startTime: start,
-          endTime: end,
+          periodNumber: def.p,
+          timeSlot: timeStr,
+          startTime: def.start,
+          endTime: def.end,
           subjectName: defaultOption.name,
           subjectCode: defaultOption.code,
           facultyName: defaultOption.faculty,
@@ -426,19 +513,16 @@ function parseTimetableRows(rows: Array<Record<string, unknown>>): DaySchedule[]
         };
       }
 
-      // Standard single subject period
-      const codeMatch = cell.match(/\(([^)]+)\)/);
-      const code = codeMatch ? codeMatch[1].trim() : '';
-      const name = cell.replace(/\([^)]+\)/g, '').trim();
-
+      // Single subject
+      const single = options[0] || { code: '', name: cell, faculty: '—' };
       return {
-        periodNumber: p,
-        timeSlot: slot,
-        startTime: start,
-        endTime: end,
-        subjectName: cleanSubjectName(name),
-        subjectCode: code,
-        facultyName: String(row?.[`F${p}`] || ''),
+        periodNumber: def.p,
+        timeSlot: timeStr,
+        startTime: def.start,
+        endTime: def.end,
+        subjectName: single.name,
+        subjectCode: single.code,
+        facultyName: single.faculty,
         isElective: false,
       };
     });
@@ -469,7 +553,7 @@ export async function fetchAssignmentsData(
 
     if (res.ok) {
       const data = await res.json();
-      const raw = data && data.dt ? (typeof data.dt === 'string' ? JSON.parse(data.dt) : data.dt) : [];
+      const raw = data && data.state ? (typeof data.state === 'string' ? JSON.parse(data.state) : data.state) : [];
       if (Array.isArray(raw) && raw.length > 0) {
         return parseAssignments(raw);
       }
@@ -482,128 +566,104 @@ export async function fetchAssignmentsData(
 }
 
 function parseAssignments(raw: Array<Record<string, unknown>>): AssignmentItem[] {
-  return raw.map((item) => {
-    const detailId = String(item.AssignmentDetailID || item.ID || '');
-    const subName = cleanSubjectName(String(item.SubjectName || item.CourseName || 'Subject'));
+  const items: AssignmentItem[] = raw.map((item) => {
+    const detailId = String(item.AssignmentDetailID || item.AssignID || '');
+    const isMaterial = String(item.Assignmenttype || '').trim().toLowerCase() === 'study material';
+    const subName = cleanSubjectName(String(item.CLASSSUBJECT || item.SubjectName || 'Subject'));
     const subCode = String(item.SubjectCode || item.CourseCode || '');
-    const topic = String(item.TopicName || item.SerialNo || item.AssignmentTitle || 'Assignment');
-    const subDate = String(item.SubmissionDate || item.CreatedDate || '');
+    const topic = String(item.ASSIGNMENTSUBJECT || item.TopicName || 'Assignment').trim();
+    const subDate = String(item.DATETO || item.DATEFROM || '').trim();
     const statusVal = Number(item.DateTimeValidation ?? 0);
-    const isMaterial = String(item.AssignmentType || '').toLowerCase().includes('material') || statusVal === 2;
+    const isOverdue = String(item.DateTimeValidation) === '2';
+
+    // Parse due date DD/MM/YYYY into timestamp for priority sorting
+    let dueDateTimestamp = 0;
+    if (subDate) {
+      const parts = subDate.split('/');
+      if (parts.length === 3) {
+        dueDateTimestamp = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)).getTime();
+      }
+    }
 
     return {
       detailId,
-      assignmentId: String(item.AssignmentID || ''),
+      assignmentId: String(item.AssignID || ''),
       subjectName: subName,
       subjectCode: subCode,
       topic,
       submissionDate: subDate,
+      dueDateTimestamp,
       maxMarks: Number(item.MaxMarks || 20),
       passMarks: Number(item.PassMarks || 8),
       status: statusVal,
-      isOverdue: statusVal === 2,
+      isOverdue,
       category: isMaterial ? 'STUDY_MATERIAL' : 'ASSIGNMENT',
     };
   });
-}
 
-/**
- * Clean and shorten overly verbose subject names.
- */
-function cleanSubjectName(name: string): string {
-  if (!name) return 'Subject';
-  return name
-    .replace(/^DEPARTMENTAL\s+ELECTIVE\s*[-:]?\s*/i, '')
-    .replace(/^OPEN\s+ELECTIVE\s*[-:]?\s*/i, '')
-    .replace(/\s*\(THEORY\)/i, '')
-    .replace(/\s*\(PRACTICAL\)/i, ' Lab')
-    .trim();
+  return items;
 }
 
 // -----------------------------------------------------------------------------
-// Fallback Datasets (Ensures Instant Testing & Complete UI Functionality)
+// Fallback Datasets (Used only when completely offline or during portal downtime)
 // -----------------------------------------------------------------------------
 
 function getFallbackAttendance(): AttendanceData {
   return {
-    overallPercentage: 78.4,
-    totalDelivered: 142,
-    totalAttended: 111,
-    bunkAllowance: 3,
-    shortfall: 0,
-    status: 'SAFE',
-    dateRange: '01 Aug 2026 – Present',
+    overallPercentage: 25.09,
+    totalDelivered: 267,
+    totalAttended: 67,
+    bunkAllowance: 0,
+    shortfall: 533,
+    status: 'CRITICAL',
+    dateRange: '05/07/2026 – 23/09/2026',
     subjects: [
       {
         subjectId: '1',
-        subjectCode: 'BTCS501T',
-        subjectName: 'Advance DBMS',
-        facultyName: 'Dr. Sumit Kumar',
-        delivered: 24,
-        attended: 20,
-        percentage: 83.33,
-        bunkAllowance: 2,
-        shortfall: 0,
-        status: 'SAFE',
+        subjectCode: 'BTCS301T',
+        subjectName: 'Computer Vision',
+        facultyName: 'Akshay Juneja',
+        delivered: 31,
+        attended: 7,
+        percentage: 22.58,
+        bunkAllowance: 0,
+        shortfall: 65,
+        status: 'CRITICAL',
       },
       {
         subjectId: '2',
-        subjectCode: 'BTCS502T',
-        subjectName: 'Cloud Computing',
-        facultyName: 'Prof. R. Sharma',
-        delivered: 28,
-        attended: 20,
-        percentage: 71.42,
+        subjectCode: 'BTCS303T',
+        subjectName: 'Full Stack',
+        facultyName: 'Ankita',
+        delivered: 23,
+        attended: 6,
+        percentage: 26.09,
         bunkAllowance: 0,
-        shortfall: 2,
+        shortfall: 45,
         status: 'CRITICAL',
       },
       {
         subjectId: '3',
-        subjectCode: 'BTCS503T',
+        subjectCode: 'SECS05',
         subjectName: 'Data Analytics & Career Adv.',
-        facultyName: 'Dr. P. Gupta',
-        delivered: 22,
-        attended: 19,
-        percentage: 86.36,
-        bunkAllowance: 3,
-        shortfall: 0,
-        status: 'SAFE',
+        facultyName: 'Sandeep Kumar',
+        delivered: 48,
+        attended: 14,
+        percentage: 29.17,
+        bunkAllowance: 0,
+        shortfall: 88,
+        status: 'CRITICAL',
       },
       {
         subjectId: '4',
-        subjectCode: 'BTCS504T',
-        subjectName: 'Compiler Design',
-        facultyName: 'Prof. Meenakshi',
-        delivered: 26,
-        attended: 21,
-        percentage: 80.76,
-        bunkAllowance: 2,
-        shortfall: 0,
-        status: 'SAFE',
-      },
-      {
-        subjectId: '5',
-        subjectCode: 'UVC027GT',
-        subjectName: 'GATE Preparation',
-        facultyName: 'Aradhya Saini',
-        delivered: 20,
-        attended: 16,
-        percentage: 80.0,
-        bunkAllowance: 1,
-        shortfall: 0,
-        status: 'SAFE',
-      },
-      {
-        subjectId: '6',
-        subjectCode: 'BTCS501P',
-        subjectName: 'Advance DBMS Lab',
-        facultyName: 'Dr. Sumit Kumar',
-        delivered: 22,
-        attended: 15,
-        percentage: 68.18,
+        subjectCode: 'BTCSD301T',
+        subjectName: 'Cloud Computing',
+        facultyName: 'Vaibhav Kumar',
+        delivered: 25,
+        attended: 8,
+        percentage: 32.0,
         bunkAllowance: 0,
-        shortfall: 3,
+        shortfall: 43,
         status: 'CRITICAL',
       },
     ],
@@ -611,73 +671,31 @@ function getFallbackAttendance(): AttendanceData {
 }
 
 function getFallbackTimetable(): DaySchedule[] {
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const subjects = [
-    { name: 'Advance DBMS', code: 'BTCS501T', faculty: 'Dr. Sumit Kumar' },
-    { name: 'Cloud Computing', code: 'BTCS502T', faculty: 'Prof. R. Sharma' },
-    { name: 'Data Analytics', code: 'BTCS503T', faculty: 'Dr. P. Gupta' },
-    { name: 'Compiler Design', code: 'BTCS504T', faculty: 'Prof. Meenakshi' },
-  ];
-
-  return days.map((day, idx) => ({
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  return weekdays.map((day) => ({
     dayName: day,
-    periods: PERIOD_TIMES.map(({ p, slot, start, end }) => {
-      if (p === 4) {
-        return {
-          periodNumber: p,
-          timeSlot: slot,
-          startTime: start,
-          endTime: end,
-          subjectName: 'Elective Track',
-          subjectCode: 'ELEC',
-          facultyName: 'Multiple Faculty',
-          isElective: true,
-          electiveOptions: [
-            { code: 'UVC027GT', name: 'GATE', faculty: 'Aradhya Saini', fullString: 'GATE(UVC027GT)' },
-            { code: 'UVC028CT', name: 'CAT', faculty: 'Dr. Neha Verma', fullString: 'CAT(UVC028CT)' },
-            { code: 'UVC029ST', name: 'Study Abroad', faculty: 'Dr. M. Roy', fullString: 'Study Abroad(UVC029ST)' },
-            { code: 'UVC030CCT', name: 'Competitive Coding', faculty: 'Er. Rahul Pal', fullString: 'Competitive Coding(UVC030CCT)' },
-          ],
-        };
-      }
-
-      if (p === 5) {
-        return {
-          periodNumber: p,
-          timeSlot: slot,
-          startTime: start,
-          endTime: end,
-          subjectName: 'Lunch Break',
-          subjectCode: '',
-          facultyName: '',
-          isElective: false,
-        };
-      }
-
-      const s = subjects[(p + idx) % subjects.length];
-      return {
-        periodNumber: p,
-        timeSlot: slot,
-        startTime: start,
-        endTime: end,
-        subjectName: s.name,
-        subjectCode: s.code,
-        facultyName: s.faculty,
-        isElective: false,
-      };
-    }),
+    periods: PERIOD_DEFS.map((def) => ({
+      periodNumber: def.p,
+      timeSlot: def.slot,
+      startTime: def.start,
+      endTime: def.end,
+      subjectName: def.p === 1 ? 'Computer Vision' : def.p === 2 ? 'Data Analytics & Career Adv.' : 'Cloud Computing',
+      subjectCode: def.p === 1 ? 'BTCS301T' : 'BTCSD301T',
+      facultyName: 'Akshay Juneja',
+      isElective: false,
+    })),
   }));
 }
 
 function getFallbackAssignments(): AssignmentItem[] {
   return [
     {
-      detailId: '101',
-      assignmentId: '1',
-      subjectName: 'Advance DBMS',
-      subjectCode: 'BTCS501T',
-      topic: 'Indexing & B+ Trees Optimization (AS-04)',
-      submissionDate: '26 Sep 2026',
+      detailId: '1',
+      assignmentId: '101',
+      subjectName: 'Computer Vision',
+      subjectCode: 'BTCS301T',
+      topic: 'Edge Detection and Image Filtering Algorithms',
+      submissionDate: '30/09/2026',
       maxMarks: 20,
       passMarks: 8,
       status: 0,
@@ -685,12 +703,12 @@ function getFallbackAssignments(): AssignmentItem[] {
       category: 'ASSIGNMENT',
     },
     {
-      detailId: '102',
-      assignmentId: '2',
+      detailId: '2',
+      assignmentId: '102',
       subjectName: 'Cloud Computing',
-      subjectCode: 'BTCS502T',
-      topic: 'Virtualization & Hypervisor Architecture',
-      submissionDate: '28 Sep 2026',
+      subjectCode: 'BTCSD301T',
+      topic: 'Virtualization & Hypervisor Architectures',
+      submissionDate: '02/10/2026',
       maxMarks: 20,
       passMarks: 8,
       status: 0,
@@ -698,55 +716,16 @@ function getFallbackAssignments(): AssignmentItem[] {
       category: 'ASSIGNMENT',
     },
     {
-      detailId: '103',
-      assignmentId: '3',
-      subjectName: 'Data Analytics',
-      subjectCode: 'BTCS503T',
-      topic: 'Linear Regression & Feature Engineering',
-      submissionDate: '30 Sep 2026',
-      maxMarks: 20,
-      passMarks: 8,
-      status: 0,
-      isOverdue: false,
-      category: 'ASSIGNMENT',
-    },
-    {
-      detailId: '201',
-      assignmentId: '4',
-      subjectName: 'Advance DBMS',
-      subjectCode: 'BTCS501T',
-      topic: 'Complete Unit 1 & 2 Lecture Notes (PDF)',
-      submissionDate: '10 Sep 2026',
+      detailId: '3',
+      assignmentId: '103',
+      subjectName: 'Cyber Forensic',
+      subjectCode: 'BTCSD309T',
+      topic: 'Essential Readings 1: Introduction to Cyber Crime',
+      submissionDate: '27/07/2026',
       maxMarks: 0,
       passMarks: 0,
       status: 2,
-      isOverdue: false,
-      category: 'STUDY_MATERIAL',
-    },
-    {
-      detailId: '202',
-      assignmentId: '5',
-      subjectName: 'Cloud Computing',
-      subjectCode: 'BTCS502T',
-      topic: 'AWS / Azure Architecture Reference Sheets',
-      submissionDate: '12 Sep 2026',
-      maxMarks: 0,
-      passMarks: 0,
-      status: 2,
-      isOverdue: false,
-      category: 'STUDY_MATERIAL',
-    },
-    {
-      detailId: '203',
-      assignmentId: '6',
-      subjectName: 'Compiler Design',
-      subjectCode: 'BTCS504T',
-      topic: 'Lexical Analysis & DFA State Diagrams',
-      submissionDate: '14 Sep 2026',
-      maxMarks: 0,
-      passMarks: 0,
-      status: 2,
-      isOverdue: false,
+      isOverdue: true,
       category: 'STUDY_MATERIAL',
     },
   ];
