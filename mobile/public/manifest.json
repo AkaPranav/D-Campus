@@ -1,0 +1,23 @@
+{
+  "name": "D-Campus Mobile",
+  "short_name": "D-Campus",
+  "description": "Retro-dark student portal suite with automated zero-CAPTCHA sync, attendance bunk calculator, dynamic timetable, and lecture notes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
