@@ -126,6 +126,11 @@ function cleanFacultyName(raw: string): string {
         .trim()
     : null;
 
+  // If substitute faculty is specified, they are the one taking the class
+  if (subFaculty) {
+    return subFaculty;
+  }
+
   // Strip all HTML tags and entities
   let cleaned = raw
     .replace(/<[^>]+>/g, '')
@@ -133,14 +138,9 @@ function cleanFacultyName(raw: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // If there's a colon followed by "Lecture Substituted", extract the primary professor name
+  // If there's a colon followed by "Lecture Substituted" or other text, extract professor name
   if (cleaned.includes(':')) {
     cleaned = cleaned.split(':')[0].trim();
-  }
-
-  // If substitution was detected, append clean label
-  if (subFaculty && subFaculty.toLowerCase() !== cleaned.toLowerCase()) {
-    return `${cleaned} (Sub: ${subFaculty})`;
   }
 
   return cleaned || '—';

@@ -488,6 +488,11 @@
           .trim()
       : null;
 
+    // If substitute faculty is specified, they are the one taking the class
+    if (subFaculty) {
+      return subFaculty;
+    }
+
     let cleaned = raw
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/gi, ' ')
@@ -496,10 +501,6 @@
 
     if (cleaned.includes(':')) {
       cleaned = cleaned.split(':')[0].trim();
-    }
-
-    if (subFaculty && subFaculty.toLowerCase() !== cleaned.toLowerCase()) {
-      return `${cleaned} (Sub: ${subFaculty})`;
     }
 
     return cleaned || "—";
