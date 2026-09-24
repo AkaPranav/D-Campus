@@ -135,6 +135,17 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     });
   }
 
+  // Sanitize cached timetable data immediately on install/update
+  try {
+    const storedTT = await chrome.storage.local.get(['timetableData']);
+    if (storedTT.timetableData) {
+      sanitizeTimetableData(storedTT.timetableData);
+      await chrome.storage.local.set({ timetableData: storedTT.timetableData });
+    }
+  } catch (e) {
+    console.warn('[D-Campus] Timetable storage sanitization error:', e);
+  }
+
   const data = await chrome.storage.local.get(['regId']);
   if (!data.regId) {
     await chrome.storage.local.set({
@@ -157,6 +168,11 @@ chrome.runtime.onStartup.addListener(async () => {
   console.log('[D-Campus] Browser startup: verifying alarms & refreshing ERP session...');
   await setupAlarms();
   try {
+    const storedTT = await chrome.storage.local.get(['timetableData']);
+    if (storedTT.timetableData) {
+      sanitizeTimetableData(storedTT.timetableData);
+      await chrome.storage.local.set({ timetableData: storedTT.timetableData });
+    }
     await touchSession();
   } catch (e) {
     console.warn('[D-Campus] Startup session touch error:', e);
@@ -600,34 +616,84 @@ const SUBJECT_SHORT_MAP = {
   "GATE": "GATE"
 };
 
+function sanitizeTimetableData(ttData) {
+  if (!ttData || typeof ttData !== 'object') return;
+  for (const day of Object.keys(ttData)) {
+    if (Array.isArray(ttData[day])) {
+      for (const period of ttData[day]) {
+        if (period.faculty) {
+          const rawFac = String(period.faculty);
+          if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac)) {
+            period.isSubstituted = true;
+            if (rawFac.includes(':')) {
+              const orig = cleanFacultyName(rawFac.split(':')[0]);
+              if (orig && orig !== cleanFacultyName(rawFac)) {
+                period.originalFaculty = orig;
+              }
+            }
+          }
+          period.faculty = cleanFacultyName(period.faculty);
+        }
+        if (period.content && period.content.includes('•')) {
+          period.content = `${period.shortSubject || period.subject} • ${period.faculty}`;
+        }
+        if (Array.isArray(period.options)) {
+          for (const opt of period.options) {
+            if (opt.faculty) {
+              if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(opt.faculty)) {
+                opt.isSubstituted = true;
+              }
+              opt.faculty = cleanFacultyName(opt.faculty);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 function cleanFacultyName(raw) {
   if (!raw) return "—";
 
-  // Check for substitution notice e.g. "Lecture Substituted ...,Ankita" or "Lecture Substituted Ankita"
-  const subMatch = raw.match(/Lecture\s+Substituted(?:.*?,\s*|\s+)([^<:]+)/i);
-  const subFaculty = subMatch
-    ? subMatch[1]
+  // 1. Check for any variation of substitution notice
+  const subPatterns = [
+    /Lecture\s+Substituted(?:[\s\S]*?,\s*|\s+(?:by\s+)?|\s*-\s*|\s*:\s*)([^<:]+)/i,
+    /Substituted\s+(?:by\s+)?([^<:]+)/i,
+    /[(\[]?\s*(?:Sub|Substitute|Substitution)\s*:\s*([^)\],<:]+)[)\]]?/i
+  ];
+
+  for (const pat of subPatterns) {
+    const match = raw.match(pat);
+    if (match && match[1]) {
+      let name = match[1]
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/gi, ' ')
         .replace(/\s+/g, ' ')
-        .replace(/[;,.]$/, '')
-        .trim()
-    : null;
-
-  // If substitute faculty is specified, they are the one taking the class
-  if (subFaculty) {
-    return subFaculty;
+        .replace(/[;,.\])]+$/, '')
+        .replace(/^[(\[]+/, '')
+        .replace(/^[-–—\s]+/, '')
+        .replace(/^by\s+/i, '')
+        .trim();
+      if (name && name.length > 1 && !name.toLowerCase().includes('lecture')) {
+        return name;
+      }
+    }
   }
 
+  // 2. Strip all HTML tags and entities
   let cleaned = raw
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
+  // 3. If there is a colon with extra text after it
   if (cleaned.includes(':')) {
     cleaned = cleaned.split(':')[0].trim();
   }
+
+  // 4. Strip any cached "(Sub: ...)" or "[Sub: ...]" label
+  cleaned = cleaned.replace(/\s*[(\[]\s*Sub\s*:.*?[)\]]/gi, '').trim();
 
   return cleaned || "—";
 }
@@ -639,6 +705,16 @@ function parseElectiveOptions(val) {
     const firstCommaIdx = seg.indexOf(',');
     const rawSubj = firstCommaIdx !== -1 ? seg.substring(0, firstCommaIdx).trim() : seg.trim();
     const rawFac = firstCommaIdx !== -1 ? seg.substring(firstCommaIdx + 1).trim() : '';
+
+    const isSubstituted = /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(seg) || /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac);
+
+    let originalFaculty = '';
+    if (isSubstituted && rawFac.includes(':')) {
+      const orig = cleanFacultyName(rawFac.split(':')[0]);
+      if (orig && orig !== cleanFacultyName(rawFac)) {
+        originalFaculty = orig;
+      }
+    }
 
     const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
     const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
@@ -652,7 +728,9 @@ function parseElectiveOptions(val) {
       subject: cleanSubj,
       shortSubject,
       code,
-      faculty
+      faculty,
+      isSubstituted,
+      originalFaculty
     };
   });
 }
@@ -758,6 +836,8 @@ function parseTimetableJson(rows, enrolledSubjects = [], userElectives = {}) {
         shortSubject: chosen.shortSubject,
         code: chosen.code,
         faculty: chosen.faculty,
+        isSubstituted: Boolean(chosen.isSubstituted),
+        originalFaculty: chosen.originalFaculty || '',
         content: `${chosen.shortSubject} • ${chosen.faculty}`,
         options: options.length > 1 ? options : null,
         slotKey,

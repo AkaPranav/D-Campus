@@ -151,12 +151,17 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
           const displayName = activeElective ? activeElective.name : period.subjectName;
           const displayFaculty = activeElective ? activeElective.faculty : period.facultyName;
 
+          const isSub = Boolean(activeElective ? activeElective.isSubstituted : period.isSubstituted);
+          const origFaculty = activeElective ? activeElective.originalFaculty : period.originalFaculty;
+
           return (
             <div
               key={`${selectedDay}-P${period.periodNumber}-${idx}`}
               className={`retro-card overflow-hidden transition-all ${
                 isNowRunning
                   ? 'border-2 border-[#fbbf24] shadow-[4px_4px_0px_#000000]'
+                  : isSub
+                  ? 'border-2 border-[#a855f7] shadow-[4px_4px_0px_#000000] bg-gradient-to-b from-[#a855f7]/10 to-[#080a0d]'
                   : status === 'COMPLETED'
                   ? 'opacity-65 bg-[#0e1218]'
                   : ''
@@ -189,19 +194,26 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
                 </div>
 
                 {/* Status Badges - ZERO NEON */}
-                {isNowRunning ? (
-                  <span className="bg-[#000000] text-[#10b981] font-mono text-[9px] font-black px-2 py-0.5 rounded border border-[#000000]">
-                    ● NOW RUNNING
-                  </span>
-                ) : status === 'COMPLETED' ? (
-                  <span className="retro-badge ghost text-[9px]">
-                    COMPLETED
-                  </span>
-                ) : (
-                  <span className="retro-badge info text-[9px]">
-                    UPCOMING
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {isSub && (
+                    <span className="font-mono text-[9px] font-black text-[#000000] bg-[#a855f7] px-1.5 py-0.5 rounded border border-[#000000] shadow-[1px_1px_0px_#000000]">
+                      ⚡ SUBSTITUTE
+                    </span>
+                  )}
+                  {isNowRunning ? (
+                    <span className="bg-[#000000] text-[#10b981] font-mono text-[9px] font-black px-2 py-0.5 rounded border border-[#000000]">
+                      ● NOW RUNNING
+                    </span>
+                  ) : status === 'COMPLETED' ? (
+                    <span className="retro-badge ghost text-[9px]">
+                      COMPLETED
+                    </span>
+                  ) : (
+                    <span className="retro-badge info text-[9px]">
+                      UPCOMING
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Card Body */}
@@ -224,10 +236,25 @@ export default function TimetableView({ schedule }: TimetableViewProps) {
                   {displayName}
                 </h3>
 
-                <div className="flex items-center gap-1 text-[11px] font-mono text-[#94a3b8] pt-0.5">
-                  <User size={11} className="shrink-0" />
-                  <span>Prof: {displayFaculty}</span>
-                </div>
+                {isSub ? (
+                  <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-black text-[#d8b4fe] bg-[#a855f7]/20 border border-[#a855f7] px-2 py-0.5 rounded shadow-[1px_1px_0px_#000000]">
+                      <User size={11} className="shrink-0 text-[#a855f7]" />
+                      <span>Sub: {displayFaculty}</span>
+                      <span className="bg-[#a855f7] text-[#000000] text-[8px] font-black px-1 rounded ml-0.5">SUB</span>
+                    </span>
+                    {origFaculty && (
+                      <span className="font-mono text-[10px] text-[#64748b] line-through">
+                        ({origFaculty})
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#94a3b8] pt-0.5">
+                    <User size={11} className="shrink-0" />
+                    <span>Prof: {displayFaculty}</span>
+                  </div>
+                )}
               </div>
 
               {/* In-Card Multi-Elective Dropdown Selector */}

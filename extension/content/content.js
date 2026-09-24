@@ -427,8 +427,14 @@
           appState.attendanceData?.subjects || [],
           appState.selectedElectives || {}
         );
+        // Persist the freshly parsed timetableData to local storage so popup and background stay in sync!
+        await chrome.storage.local.set({ timetableData: appState.timetableData });
       } else if (appState.regId) {
         await fetchTimetableDirectly(appState.regId);
+      } else if (stored.timetableData) {
+        sanitizeTimetableData(stored.timetableData);
+        appState.timetableData = stored.timetableData;
+        await chrome.storage.local.set({ timetableData: appState.timetableData });
       }
       if (stored.lastSync) appState.lastSync = stored.lastSync;
 
@@ -474,34 +480,84 @@
     "GATE": "GATE"
   };
 
+  function sanitizeTimetableData(ttData) {
+    if (!ttData || typeof ttData !== 'object') return;
+    for (const day of Object.keys(ttData)) {
+      if (Array.isArray(ttData[day])) {
+        for (const period of ttData[day]) {
+          if (period.faculty) {
+            const rawFac = String(period.faculty);
+            if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac)) {
+              period.isSubstituted = true;
+              if (rawFac.includes(':')) {
+                const orig = cleanFacultyName(rawFac.split(':')[0]);
+                if (orig && orig !== cleanFacultyName(rawFac)) {
+                  period.originalFaculty = orig;
+                }
+              }
+            }
+            period.faculty = cleanFacultyName(period.faculty);
+          }
+          if (period.content && period.content.includes('•')) {
+            period.content = `${period.shortSubject || period.subject} • ${period.faculty}`;
+          }
+          if (Array.isArray(period.options)) {
+            for (const opt of period.options) {
+              if (opt.faculty) {
+                if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(opt.faculty)) {
+                  opt.isSubstituted = true;
+                }
+                opt.faculty = cleanFacultyName(opt.faculty);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   function cleanFacultyName(raw) {
     if (!raw) return "—";
 
-    // Check for substitution notice e.g. "Lecture Substituted ...,Ankita" or "Lecture Substituted Ankita"
-    const subMatch = raw.match(/Lecture\s+Substituted(?:.*?,\s*|\s+)([^<:]+)/i);
-    const subFaculty = subMatch
-      ? subMatch[1]
+    // 1. Check for any variation of substitution notice
+    const subPatterns = [
+      /Lecture\s+Substituted(?:[\s\S]*?,\s*|\s+(?:by\s+)?|\s*-\s*|\s*:\s*)([^<:]+)/i,
+      /Substituted\s+(?:by\s+)?([^<:]+)/i,
+      /[(\[]?\s*(?:Sub|Substitute|Substitution)\s*:\s*([^)\],<:]+)[)\]]?/i
+    ];
+
+    for (const pat of subPatterns) {
+      const match = raw.match(pat);
+      if (match && match[1]) {
+        let name = match[1]
           .replace(/<[^>]+>/g, '')
           .replace(/&nbsp;/gi, ' ')
           .replace(/\s+/g, ' ')
-          .replace(/[;,.]$/, '')
-          .trim()
-      : null;
-
-    // If substitute faculty is specified, they are the one taking the class
-    if (subFaculty) {
-      return subFaculty;
+          .replace(/[;,.\])]+$/, '')
+          .replace(/^[(\[]+/, '')
+          .replace(/^[-–—\s]+/, '')
+          .replace(/^by\s+/i, '')
+          .trim();
+        if (name && name.length > 1 && !name.toLowerCase().includes('lecture')) {
+          return name;
+        }
+      }
     }
 
+    // 2. Strip all HTML tags and entities
     let cleaned = raw
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/gi, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
+    // 3. If there is a colon with extra text after it
     if (cleaned.includes(':')) {
       cleaned = cleaned.split(':')[0].trim();
     }
+
+    // 4. Strip any cached "(Sub: ...)" or "[Sub: ...]" label
+    cleaned = cleaned.replace(/\s*[(\[]\s*Sub\s*:.*?[)\]]/gi, '').trim();
 
     return cleaned || "—";
   }
@@ -513,6 +569,16 @@
       const firstCommaIdx = seg.indexOf(',');
       const rawSubj = firstCommaIdx !== -1 ? seg.substring(0, firstCommaIdx).trim() : seg.trim();
       const rawFac = firstCommaIdx !== -1 ? seg.substring(firstCommaIdx + 1).trim() : '';
+
+      const isSubstituted = /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(seg) || /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac);
+
+      let originalFaculty = '';
+      if (isSubstituted && rawFac.includes(':')) {
+        const orig = cleanFacultyName(rawFac.split(':')[0]);
+        if (orig && orig !== cleanFacultyName(rawFac)) {
+          originalFaculty = orig;
+        }
+      }
 
       const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
       const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
@@ -526,7 +592,9 @@
         subject: cleanSubj,
         shortSubject,
         code,
-        faculty
+        faculty,
+        isSubstituted,
+        originalFaculty
       };
     });
   }
@@ -627,6 +695,8 @@
           shortSubject: chosen.shortSubject,
           code: chosen.code,
           faculty: chosen.faculty,
+          isSubstituted: Boolean(chosen.isSubstituted),
+          originalFaculty: chosen.originalFaculty || '',
           content: `${chosen.shortSubject} • ${chosen.faculty}`,
           options: options.length > 1 ? options : null,
           slotKey,
@@ -1253,7 +1323,7 @@
           <div class="now-title">${nowNextInfo.nextClass.subject}</div>
           <div class="now-detail">
             ${nowNextInfo.nextClass.period} &nbsp;•&nbsp; ${nowNextInfo.nextClass.time}
-            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.nextClass.faculty}` : ''}
+            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${cleanFacultyName(nowNextInfo.nextClass.faculty)}${nowNextInfo.nextClass.isSubstituted ? ' <span class="retro-badge substitute" style="font-size:9px; padding:1px 5px; vertical-align:middle;">⚡ SUB</span>' : ''}` : ''}
           </div>
         </div>
       `;
@@ -1267,7 +1337,7 @@
           <div class="now-title">${nowNextInfo.currentClass.subject}</div>
           <div class="now-detail">
             ${nowNextInfo.currentClass.period} &nbsp;•&nbsp; ${nowNextInfo.currentClass.time}
-            ${nowNextInfo.currentClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.currentClass.faculty}` : ''}
+            ${nowNextInfo.currentClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${cleanFacultyName(nowNextInfo.currentClass.faculty)}${nowNextInfo.currentClass.isSubstituted ? ' <span class="retro-badge substitute" style="font-size:9px; padding:1px 5px; vertical-align:middle;">⚡ SUB</span>' : ''}` : ''}
           </div>
         </div>
 
@@ -1278,7 +1348,7 @@
           <div class="now-title">${nowNextInfo.nextClass.subject}</div>
           <div class="now-detail">
             ${nowNextInfo.nextClass.period} &nbsp;•&nbsp; ${nowNextInfo.nextClass.time}
-            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${nowNextInfo.nextClass.faculty}` : ''}
+            ${nowNextInfo.nextClass.faculty !== '—' ? `&nbsp;•&nbsp; 👤 ${cleanFacultyName(nowNextInfo.nextClass.faculty)}${nowNextInfo.nextClass.isSubstituted ? ' <span class="retro-badge substitute" style="font-size:9px; padding:1px 5px; vertical-align:middle;">⚡ SUB</span>' : ''}` : ''}
           </div>
         </div>
       `;
@@ -1369,7 +1439,8 @@
           }
         }
 
-        pCard.className = `period-card ${statusCardClass} ${p.isFree ? 'is-free' : ''}`;
+        const isSub = Boolean(p.isSubstituted);
+        pCard.className = `period-card ${statusCardClass} ${p.isFree ? 'is-free' : ''} ${isSub ? 'is-substituted' : ''}`;
 
         pCard.innerHTML = `
           <div class="period-card-top">
@@ -1377,7 +1448,10 @@
               <span class="period-badge">${p.period}</span>
               <span class="period-time">${p.time}</span>
             </div>
-            <span class="retro-badge ${statusBadgeClass}">${statusBadgeText}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${isSub ? `<span class="retro-badge substitute">⚡ SUBSTITUTE</span>` : ''}
+              <span class="retro-badge ${statusBadgeClass}">${statusBadgeText}</span>
+            </div>
           </div>
 
           <div class="period-subject-name" title="${p.subject}">
@@ -1387,7 +1461,18 @@
           <div class="period-details-grid" style="grid-template-columns: ${p.code ? 'repeat(2, 1fr)' : '1fr'};">
             <div class="period-detail-item">
               <span class="detail-label">TEACHER:</span>
-              <span class="detail-value">${p.faculty || '—'}</span>
+              <span class="detail-value">
+                ${isSub ? `
+                  <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
+                    <span class="substitute-faculty-badge">
+                      <span>🔄</span>
+                      <span>${cleanFacultyName(p.faculty)}</span>
+                      <span class="sub-tag">SUB</span>
+                    </span>
+                    ${p.originalFaculty ? `<span class="original-faculty-muted" title="Regular Teacher">(${p.originalFaculty})</span>` : ''}
+                  </div>
+                ` : `${cleanFacultyName(p.faculty)}`}
+              </span>
             </div>
             ${p.code ? `
               <div class="period-detail-item">
@@ -1403,7 +1488,7 @@
               <select class="elective-dropdown" data-slot="${p.slotKey}" style="background:var(--bg-surface-inset); border:1.5px solid var(--border-base); color:var(--accent-gold); font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:4px; outline:none; cursor:pointer; max-width:210px;">
                 ${p.options.map(opt => `
                   <option value="${opt.subject}" ${opt.subject === p.subject ? 'selected' : ''}>
-                    ${opt.shortSubject} (${opt.code}) • ${opt.faculty}
+                    ${opt.shortSubject} (${opt.code}) • ${cleanFacultyName(opt.faculty)}${opt.isSubstituted ? ' [⚡ SUB]' : ''}
                   </option>
                 `).join('')}
               </select>
@@ -2082,7 +2167,8 @@
               period: p.period,
               time: p.time,
               subject: p.shortSubject || p.subject,
-              faculty: p.faculty
+              faculty: p.faculty,
+              isSubstituted: Boolean(p.isSubstituted)
             };
           }
           // Look for next non-free class today
@@ -2092,7 +2178,8 @@
                 period: periods[j].period,
                 time: periods[j].time,
                 subject: periods[j].shortSubject || periods[j].subject,
-                faculty: periods[j].faculty
+                faculty: periods[j].faculty,
+                isSubstituted: Boolean(periods[j].isSubstituted)
               };
               break;
             }
@@ -2104,7 +2191,8 @@
               period: p.period,
               time: p.time,
               subject: p.shortSubject || p.subject,
-              faculty: p.faculty
+              faculty: p.faculty,
+              isSubstituted: Boolean(p.isSubstituted)
             };
             break;
           }
@@ -2124,7 +2212,8 @@
             period: `${nextDayName.slice(0, 3).toUpperCase()} ${first.period}`,
             time: first.time,
             subject: first.shortSubject || first.subject,
-            faculty: first.faculty
+            faculty: first.faculty,
+            isSubstituted: Boolean(first.isSubstituted)
           };
         }
       } else {
@@ -2135,7 +2224,8 @@
             period: `MON ${first.period}`,
             time: first.time,
             subject: first.shortSubject || first.subject,
-            faculty: first.faculty
+            faculty: first.faculty,
+            isSubstituted: Boolean(first.isSubstituted)
           };
         }
       }
@@ -2450,9 +2540,58 @@
     }
   });
 
+  // ----------------------------------------------------------------
+  // NATIVE ERP TIMETABLE SANITIZER
+  // Cleans broken/unescaped substitution notices on the native ERP table
+  // ----------------------------------------------------------------
+  function cleanNativeTimetablePage() {
+    function sanitizeTable() {
+      // 1. Clean parent table cells that contain unescaped substitution code or red elements
+      const cells = document.querySelectorAll('table td, .ui-jqgrid td');
+      cells.forEach(td => {
+        const html = td.innerHTML;
+        if (html.includes('Lecture Substituted') || html.includes('color:red') || html.includes('color: red') || /\[Sub:/i.test(html) || /\(Sub:/i.test(html)) {
+          const text = td.innerText || td.textContent || '';
+          const commaIdx = text.indexOf(',');
+          const subjPart = commaIdx !== -1 ? text.substring(0, commaIdx).trim() : '';
+          const profName = cleanFacultyName(html);
+          if (profName && profName !== '—') {
+            const badgeHtml = `<span style="background:rgba(168, 85, 247, 0.18); color:#c084fc; border:1px solid #a855f7; border-radius:3px; padding:2px 6px; font-weight:bold; font-size:11px; display:inline-flex; align-items:center; gap:4px;">🔄 ${profName} <span style="background:#a855f7; color:#000; font-size:9px; padding:1px 3px; border-radius:2px; font-weight:900;">SUB</span></span>`;
+            if (subjPart) {
+              td.innerHTML = `${subjPart}, ${badgeHtml}`;
+            } else {
+              td.innerHTML = badgeHtml;
+            }
+          }
+        }
+      });
+
+      // 2. Also clean any standalone red elements that might be rendered separately
+      const redElements = document.querySelectorAll('div[style*="color:red"], div[style*="color: red"], span[style*="color:red"], span[style*="color: red"], font[color="red"]');
+      redElements.forEach(el => {
+        const text = el.innerText || el.textContent || '';
+        if (text.toLowerCase().includes('substituted') || text.toLowerCase().includes('lecture') || /sub:/i.test(text)) {
+          const profName = cleanFacultyName(text);
+          if (profName && profName !== '—') {
+            el.style.color = '#10b981';
+            el.style.fontWeight = 'bold';
+            el.textContent = profName;
+          }
+        }
+      });
+    }
+
+    sanitizeTable();
+    if (document.body) {
+      const observer = new MutationObserver(() => sanitizeTable());
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+
   // Auto-initialize cached storage and check student session on script run
   loadCachedDataAndRender();
   checkAndSyncStudentSession();
+  cleanNativeTimetablePage();
 
   // First-Time Install Welcome & Chai Pop-Up Trigger
   chrome.storage.local.get(['hasSeenChaiModal'], (result) => {

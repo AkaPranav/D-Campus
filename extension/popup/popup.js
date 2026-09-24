@@ -367,6 +367,7 @@ async function loadAndRenderData() {
 
   // 3. Render Timetable
   if (data.timetableData) {
+    sanitizeTimetableData(data.timetableData);
     const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     const actualDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const d = new Date().getDay();
@@ -427,14 +428,16 @@ async function loadAndRenderData() {
     }
 
     if (activePeriod && isWeekday) {
-      document.getElementById('tt-now-val').textContent = `${activePeriod.period}: ${activePeriod.shortSubject || activePeriod.subject} (👤 ${activePeriod.faculty})`;
+      const subTag = activePeriod.isSubstituted ? ' [⚡ SUB]' : '';
+      document.getElementById('tt-now-val').textContent = `${activePeriod.period}: ${activePeriod.shortSubject || activePeriod.subject} (👤 ${cleanFacultyName(activePeriod.faculty)}${subTag})`;
     } else {
       document.getElementById('tt-now-val').textContent = isWeekday ? 'No class running right now' : `Weekend (${actualDayNames[d]}) — Campus closed`;
     }
 
     if (nextPeriod) {
       const prefix = !isWeekday ? 'Mon ' : (nextPeriod.isTomorrow ? 'Tomorrow ' : (nextPeriod.isMonday ? 'Mon ' : ''));
-      document.getElementById('tt-next-val').textContent = `${prefix}${nextPeriod.period} (${nextPeriod.time}): ${nextPeriod.shortSubject || nextPeriod.subject} (👤 ${nextPeriod.faculty})`;
+      const subTag = nextPeriod.isSubstituted ? ' [⚡ SUB]' : '';
+      document.getElementById('tt-next-val').textContent = `${prefix}${nextPeriod.period} (${nextPeriod.time}): ${nextPeriod.shortSubject || nextPeriod.subject} (👤 ${cleanFacultyName(nextPeriod.faculty)}${subTag})`;
     } else {
       document.getElementById('tt-next-val').textContent = 'Classes concluded for today';
     }
@@ -468,4 +471,86 @@ async function loadAndRenderData() {
       });
     }
   }
+}
+
+function sanitizeTimetableData(ttData) {
+  if (!ttData || typeof ttData !== 'object') return;
+  for (const day of Object.keys(ttData)) {
+    if (Array.isArray(ttData[day])) {
+      for (const period of ttData[day]) {
+        if (period.faculty) {
+          const rawFac = String(period.faculty);
+          if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac)) {
+            period.isSubstituted = true;
+            if (rawFac.includes(':')) {
+              const orig = cleanFacultyName(rawFac.split(':')[0]);
+              if (orig && orig !== cleanFacultyName(rawFac)) {
+                period.originalFaculty = orig;
+              }
+            }
+          }
+          period.faculty = cleanFacultyName(period.faculty);
+        }
+        if (period.content && period.content.includes('•')) {
+          period.content = `${period.shortSubject || period.subject} • ${period.faculty}`;
+        }
+        if (Array.isArray(period.options)) {
+          for (const opt of period.options) {
+            if (opt.faculty) {
+              if (/lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(opt.faculty)) {
+                opt.isSubstituted = true;
+              }
+              opt.faculty = cleanFacultyName(opt.faculty);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+function cleanFacultyName(raw) {
+  if (!raw) return "—";
+
+  // 1. Check for any variation of substitution notice
+  const subPatterns = [
+    /Lecture\s+Substituted(?:[\s\S]*?,\s*|\s+(?:by\s+)?|\s*-\s*|\s*:\s*)([^<:]+)/i,
+    /Substituted\s+(?:by\s+)?([^<:]+)/i,
+    /[(\[]?\s*(?:Sub|Substitute|Substitution)\s*:\s*([^)\],<:]+)[)\]]?/i
+  ];
+
+  for (const pat of subPatterns) {
+    const match = raw.match(pat);
+    if (match && match[1]) {
+      let name = match[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[;,.\])]+$/, '')
+        .replace(/^[(\[]+/, '')
+        .replace(/^[-–—\s]+/, '')
+        .replace(/^by\s+/i, '')
+        .trim();
+      if (name && name.length > 1 && !name.toLowerCase().includes('lecture')) {
+        return name;
+      }
+    }
+  }
+
+  // 2. Strip all HTML tags and entities
+  let cleaned = raw
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // 3. If there is a colon with extra text after it
+  if (cleaned.includes(':')) {
+    cleaned = cleaned.split(':')[0].trim();
+  }
+
+  // 4. Strip any cached "(Sub: ...)" or "[Sub: ...]" label
+  cleaned = cleaned.replace(/\s*[(\[]\s*Sub\s*:.*?[)\]]/gi, '').trim();
+
+  return cleaned || "—";
 }

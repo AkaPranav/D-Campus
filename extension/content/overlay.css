@@ -354,6 +354,7 @@
 .retro-badge.warning { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); }
 .retro-badge.info    { background: rgba(6, 182, 212, 0.15);  color: var(--accent-cyan); }
 .retro-badge.purple  { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+.retro-badge.substitute { background: var(--accent-purple); color: #000000; font-weight: 900; border: 1px solid #000000; box-shadow: 1px 1px 0 #000; letter-spacing: 0.5px; }
 
 /* Retro Cards */
 .retro-card {
@@ -837,6 +838,46 @@
 }
 .period-card.is-free {
   opacity: 0.55;
+}
+.period-card.is-substituted {
+  border: 1.5px solid var(--accent-purple) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.28), 3px 3px 0 #000 !important;
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.09) 0%, rgba(18, 22, 31, 0.95) 100%) !important;
+}
+.period-card.is-substituted.current-active {
+  border-color: var(--accent-purple) !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45), 3px 3px 0 #000 !important;
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.16) 0%, #17122b 100%) !important;
+}
+.substitute-faculty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border: 1px solid var(--accent-purple);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 800;
+  box-shadow: 1px 1px 0 #000;
+  font-size: 11px;
+}
+.substitute-faculty-badge .sub-tag {
+  font-size: 8px;
+  font-weight: 900;
+  color: #000000;
+  background: var(--accent-purple);
+  padding: 1px 3px;
+  border-radius: 2px;
+  margin-left: 2px;
+  letter-spacing: 0.3px;
+}
+.original-faculty-muted {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  margin-left: 6px;
+  font-family: var(--font-mono);
 }
 .period-card-top {
   display: flex;

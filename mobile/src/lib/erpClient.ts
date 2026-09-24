@@ -58,9 +58,13 @@ export interface TimetablePeriod {
     name: string;
     faculty: string;
     fullString: string;
+    isSubstituted?: boolean;
+    originalFaculty?: string;
   }>;
   status?: 'COMPLETED' | 'NOW RUNNING' | 'UPCOMING';
   isFree?: boolean;
+  isSubstituted?: boolean;
+  originalFaculty?: string;
 }
 
 export interface DaySchedule {
@@ -115,33 +119,45 @@ function cleanSubjectName(name: string): string {
 function cleanFacultyName(raw: string): string {
   if (!raw) return '—';
 
-  // Check for substitution notice e.g. "Lecture Substituted ...,Ankita" or "Lecture Substituted Ankita"
-  const subMatch = raw.match(/Lecture\s+Substituted(?:.*?,\s*|\s+)([^<:]+)/i);
-  const subFaculty = subMatch
-    ? subMatch[1]
+  // 1. Check for any variation of substitution notice
+  const subPatterns = [
+    /Lecture\s+Substituted(?:[\s\S]*?,\s*|\s+(?:by\s+)?|\s*-\s*|\s*:\s*)([^<:]+)/i,
+    /Substituted\s+(?:by\s+)?([^<:]+)/i,
+    /[(\[]?\s*(?:Sub|Substitute|Substitution)\s*:\s*([^)\],<:]+)[)\]]?/i
+  ];
+
+  for (const pat of subPatterns) {
+    const match = raw.match(pat);
+    if (match && match[1]) {
+      let name = match[1]
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/gi, ' ')
         .replace(/\s+/g, ' ')
-        .replace(/[;,.]$/, '')
-        .trim()
-    : null;
-
-  // If substitute faculty is specified, they are the one taking the class
-  if (subFaculty) {
-    return subFaculty;
+        .replace(/[;,.\])]+$/, '')
+        .replace(/^[(\[]+/, '')
+        .replace(/^[-–—\s]+/, '')
+        .replace(/^by\s+/i, '')
+        .trim();
+      if (name && name.length > 1 && !name.toLowerCase().includes('lecture')) {
+        return name;
+      }
+    }
   }
 
-  // Strip all HTML tags and entities
+  // 2. Strip all HTML tags and entities
   let cleaned = raw
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // If there's a colon followed by "Lecture Substituted" or other text, extract professor name
+  // 3. If there is a colon with extra text after it
   if (cleaned.includes(':')) {
     cleaned = cleaned.split(':')[0].trim();
   }
+
+  // 4. Strip any cached "(Sub: ...)" or "[Sub: ...]" label
+  cleaned = cleaned.replace(/\s*[(\[]\s*Sub\s*:.*?[)\]]/gi, '').trim();
 
   return cleaned || '—';
 }
@@ -473,6 +489,16 @@ function parseElectiveSegments(val: string) {
     const rawSubj = firstCommaIdx !== -1 ? seg.substring(0, firstCommaIdx).trim() : seg.trim();
     const rawFac = firstCommaIdx !== -1 ? seg.substring(firstCommaIdx + 1).trim() : '';
 
+    const isSubstituted = /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(seg) || /lecture\s+substituted|substituted|<div\s+style="color:\s*red|\[sub:|\(sub:/i.test(rawFac);
+
+    let originalFaculty = '';
+    if (isSubstituted && rawFac.includes(':')) {
+      const orig = cleanFacultyName(rawFac.split(':')[0]);
+      if (orig && orig !== cleanFacultyName(rawFac)) {
+        originalFaculty = orig;
+      }
+    }
+
     const matchSubj = rawSubj.match(/^(.*?)(?:\s*\((.*?)\))?$/);
     const baseSubj = matchSubj ? matchSubj[1].trim() : rawSubj;
     const code = matchSubj && matchSubj[2] ? matchSubj[2].trim() : '';
@@ -482,6 +508,8 @@ function parseElectiveSegments(val: string) {
       name: cleanSubjectName(baseSubj),
       faculty: cleanFacultyName(rawFac),
       fullString: seg,
+      isSubstituted,
+      originalFaculty,
     };
   });
 }
@@ -539,11 +567,13 @@ function parseTimetableRows(rows: Array<Record<string, unknown>>): DaySchedule[]
           facultyName: defaultOption.faculty,
           isElective: true,
           electiveOptions: options,
+          isSubstituted: defaultOption?.isSubstituted,
+          originalFaculty: defaultOption?.originalFaculty,
         };
       }
 
       // Single subject
-      const single = options[0] || { code: '', name: cell, faculty: '—' };
+      const single = options[0] || { code: '', name: cell, faculty: '—', isSubstituted: false, originalFaculty: '' };
       return {
         periodNumber: def.p,
         timeSlot: timeStr,
@@ -553,6 +583,8 @@ function parseTimetableRows(rows: Array<Record<string, unknown>>): DaySchedule[]
         subjectCode: single.code,
         facultyName: single.faculty,
         isElective: false,
+        isSubstituted: single.isSubstituted,
+        originalFaculty: single.originalFaculty,
       };
     });
 
