@@ -1228,7 +1228,7 @@
 
         // Wire download action
         card.querySelector('.btn-download-spec').addEventListener('click', () => {
-          downloadAssignmentFile(item.assignmentDetailId, item.title, item.extension);
+          downloadAssignmentFile(item.assignmentDetailId, item.title, item.extension, item.assignId);
         });
 
         // Wire submit action if active
@@ -2057,12 +2057,13 @@
   // ----------------------------------------------------------------
   // DOWNLOAD PIPELINE
   // ----------------------------------------------------------------
-  function downloadAssignmentFile(detailId, title, defaultExt) {
+  function downloadAssignmentFile(detailId, title, defaultExt, assignId) {
     showToast(`Fetching ${title}...`, 'info');
 
     chrome.runtime.sendMessage({
       type: 'FETCH_ASSIGNMENT_FILE',
-      detailId: detailId
+      detailId: detailId,
+      assignId: assignId
     }, (res) => {
       if (res && res.success && res.base64) {
         try {

@@ -272,13 +272,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'FETCH_ASSIGNMENT_FILE') {
     (async () => {
       try {
-        const res = await fetch('https://erp.coeruniversity.in/Web_Teaching/GetAssignmentImage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-          body: `AssignmentDetailID=${encodeURIComponent(message.detailId)}`
-        });
-        const json = await res.json();
-        const parsed = JSON.parse(json.data || '[]');
+        const fetchRecord = async (param) => {
+          try {
+            const res = await fetch('https://erp.coeruniversity.in/Web_Teaching/GetAssignmentImage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+              body: param
+            });
+            if (!res.ok) return [];
+            const json = await res.json();
+            if (!json) return [];
+            if (typeof json.data === 'string') {
+              try { return JSON.parse(json.data || '[]'); } catch { return []; }
+            } else if (Array.isArray(json.data)) {
+              return json.data;
+            } else if (json.Assignment) {
+              return [json];
+            }
+            return [];
+          } catch {
+            return [];
+          }
+        };
+
+        let parsed = [];
+        if (message.detailId) {
+          parsed = await fetchRecord(`AssignmentDetailID=${encodeURIComponent(message.detailId)}`);
+        }
+        if ((!parsed || parsed.length === 0 || !parsed[0]?.Assignment) && (message.assignId || message.detailId)) {
+          parsed = await fetchRecord(`AssignID=${encodeURIComponent(message.assignId || message.detailId)}`);
+        }
+        if ((!parsed || parsed.length === 0 || !parsed[0]?.Assignment) && message.detailId) {
+          parsed = await fetchRecord(`AssignmentDetailID=${encodeURIComponent(message.detailId)}&AssignID=${encodeURIComponent(message.assignId || message.detailId)}`);
+        }
+
         if (parsed.length > 0 && parsed[0].Assignment) {
           sendResponse({
             success: true,
@@ -287,7 +314,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             serialNo: (parsed[0].SerialNo || '').trim()
           });
         } else {
-          sendResponse({ success: false, reason: 'File content not found on server' });
+          sendResponse({ success: false, reason: 'File content not found on university portal' });
         }
       } catch (err) {
         sendResponse({ success: false, reason: err.message });
