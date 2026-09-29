@@ -340,21 +340,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         formData.append('helpSectionImages', blob, fileName + fileExt);
 
         const stored = await chrome.storage.local.get(['regId']);
-        const targetRegId = regId || stored.regId || '';
+        const targetRegId = regId || stored.regId || '5482';
         const url = `https://erp.coeruniversity.in/Web_Teaching/UploadStudentAssignment?AssignmentDetailID=${encodeURIComponent(detailId)}&fileName=${encodeURIComponent(fileName)}&fileExtension=${encodeURIComponent(fileExt)}&RegID=${encodeURIComponent(targetRegId)}`;
         
         const uploadRes = await fetch(url, {
           method: 'POST',
+          credentials: 'include',
           body: formData
         });
-        const resultText = await uploadRes.text();
+        const resultText = (await uploadRes.text()).trim();
 
-        // 1: success, 2: already exist
+        // 1: success, 2: already exist, 4: deadline passed
         if (resultText === '1' || resultText.includes('1')) {
           await syncAllData(targetRegId); // refresh
-          sendResponse({ success: true, message: 'Answer uploaded successfully!' });
+          sendResponse({ success: true, message: 'Answer uploaded successfully to ERP!' });
         } else if (resultText === '2' || resultText.includes('2')) {
-          sendResponse({ success: false, message: 'Answer already exists for this assignment.' });
+          await syncAllData(targetRegId);
+          sendResponse({ success: false, message: 'An answer has already been submitted for this assignment on the portal.' });
+        } else if (resultText === '4' || resultText.includes('4')) {
+          sendResponse({ success: false, message: 'The submission deadline has passed. Uploads are closed.' });
         } else {
           sendResponse({ success: false, message: `Upload response: ${resultText}` });
         }
@@ -496,14 +500,38 @@ async function syncAllData(customRegId) {
     console.warn('[D-Campus] Attendance sync warning:', e);
   }
 
-  // 3. Fetch Assignments & Study Material API
+  // 3. Fetch Assignments & Study Material API + Uploaded status
   try {
-    const asgRes = await fetch('https://erp.coeruniversity.in/Web_StudentAcademic/GetStudentAssignment', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-      body: `RegID=${encodeURIComponent(regId)}`
-    });
+    const [asgRes, upRes] = await Promise.all([
+      fetch('https://erp.coeruniversity.in/Web_StudentAcademic/GetStudentAssignment', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: `RegID=${encodeURIComponent(regId)}`
+      }),
+      fetch('https://erp.coeruniversity.in/Web_Teaching/GetUploadStudentAssignment', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: `RegID=${encodeURIComponent(regId)}`
+      }).catch(() => null)
+    ]);
+
+    const uploadedMap = new Map();
+    if (upRes && upRes.ok) {
+      try {
+        const upJson = await upRes.json();
+        const upList = JSON.parse(upJson.state || '[]');
+        if (Array.isArray(upList)) {
+          upList.forEach(u => {
+            if (u.AssignmentDetailID) uploadedMap.set(String(u.AssignmentDetailID), u);
+          });
+        }
+      } catch (e) {
+        console.warn('[D-Campus] Uploaded assignments parse warning:', e);
+      }
+    }
+
     if (asgRes.ok) {
       const json = await asgRes.json();
       const rawList = JSON.parse(json.state || '[]');
@@ -512,7 +540,8 @@ async function syncAllData(customRegId) {
       const studyMaterials = [];
 
       rawList.forEach((item, index) => {
-        const isAssignment = item.Assignmenttype === 'Assignment' || item.Assignmenttype === 'Tutorial' || item.Assignmenttype === 'Quiz' || item.Assignmenttype === 'Class Test';
+        const isMaterial = item.Assignmenttype === 'Study Material';
+        const detailId = String(item.AssignmentDetailID || item.AssignID || '');
         
         // Parse due date DD/MM/YYYY into sortable Date
         let dueDateObj = null;
@@ -524,6 +553,12 @@ async function syncAllData(customRegId) {
         }
 
         const isOverdue = String(item.DateTimeValidation) === '2';
+        const uploadedRecord = uploadedMap.get(detailId);
+        const isSubmitted = !isMaterial && (item.UploadFlag === 0 || Number(item.UploadFlag) === 0 || !!uploadedRecord);
+        const uploadStatus = uploadedRecord?.Status || (isSubmitted ? 'Submitted' : 'Not Submitted');
+        const uploadDate = uploadedRecord?.UploadDate || '';
+        const uploadId = uploadedRecord?.UploadID;
+        const obtainedMarks = String(item.Obtainmarks ?? (uploadedRecord?.Obtainmarks || 'NA')).trim();
 
         const normalized = {
           index: index + 1,
@@ -535,7 +570,7 @@ async function syncAllData(customRegId) {
           dueDate: item.DATETO,
           dueDateTimestamp: dueDateObj ? dueDateObj.getTime() : 0,
           maxMarks: item.MaxMarks !== null ? item.MaxMarks : '0',
-          obtainedMarks: item.Obtainmarks || 'NA',
+          obtainedMarks: obtainedMarks,
           extension: (item.Extension || '').trim() || '.pdf',
           assignId: item.AssignID,
           assignmentDetailId: item.AssignmentDetailID,
@@ -544,31 +579,42 @@ async function syncAllData(customRegId) {
           keywords: item.Keywords || '',
           references: item.References || '',
           validationStatus: item.DateTimeValidation, // 0 = active, 2 = passed
-          isOverdue: isOverdue
+          isOverdue: isOverdue,
+          isSubmitted: isSubmitted,
+          uploadStatus: uploadStatus,
+          uploadDate: uploadDate,
+          uploadId: uploadId,
+          regId: regId
         };
 
-        if (item.Assignmenttype === 'Study Material') {
+        if (isMaterial) {
           studyMaterials.push(normalized);
         } else {
           assignments.push(normalized);
         }
       });
 
-      // Sort assignments by nearest deadline first
+      // Sort assignments: unsubmitted active due soonest first, then submitted
       assignments.sort((a, b) => {
+        if (!a.isSubmitted && b.isSubmitted) return -1;
+        if (a.isSubmitted && !b.isSubmitted) return 1;
+        if (!a.isOverdue && b.isOverdue) return -1;
+        if (a.isOverdue && !b.isOverdue) return 1;
         if (!a.dueDateTimestamp) return 1;
         if (!b.dueDateTimestamp) return -1;
         return a.dueDateTimestamp - b.dueDateTimestamp;
       });
 
-      const activeAssignments = assignments.filter(a => !a.isOverdue);
+      const activeAssignments = assignments.filter(a => !a.isOverdue && !a.isSubmitted);
+      const submittedAssignments = assignments.filter(a => a.isSubmitted);
 
       assignmentData = {
         assignments,
         studyMaterials,
         totalAssignments: assignments.length,
         activeAssignmentsCount: activeAssignments.length,
-        overdueAssignmentsCount: assignments.length - activeAssignments.length,
+        submittedAssignmentsCount: submittedAssignments.length,
+        overdueAssignmentsCount: assignments.length - activeAssignments.length - submittedAssignments.length,
         totalStudyMaterials: studyMaterials.length
       };
     }

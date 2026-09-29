@@ -1001,11 +1001,11 @@
 
     const isStudy = appState.assignmentSubTab === 'study_material';
     const allAssignments = assignData.assignments || [];
-    const activeAssignments = allAssignments.filter(a => !a.isOverdue);
-    const overdueAssignments = allAssignments.filter(a => a.isOverdue);
-    const activeCount = assignData.activeAssignmentsCount !== undefined
-      ? assignData.activeAssignmentsCount
-      : activeAssignments.length;
+    const activeAssignments = allAssignments.filter(a => !a.isOverdue && !a.isSubmitted);
+    const submittedAssignments = allAssignments.filter(a => a.isSubmitted);
+    const overdueAssignments = allAssignments.filter(a => a.isOverdue && !a.isSubmitted);
+    const activeCount = activeAssignments.length;
+    const submittedCount = submittedAssignments.length;
     const overdueCount = overdueAssignments.length;
     const totalCount = allAssignments.length;
 
@@ -1015,6 +1015,8 @@
     } else {
       if (appState.assignmentStatusFilter === 'active') {
         targetList = activeAssignments;
+      } else if (appState.assignmentStatusFilter === 'submitted') {
+        targetList = submittedAssignments;
       } else if (appState.assignmentStatusFilter === 'overdue') {
         targetList = overdueAssignments;
       } else {
@@ -1045,6 +1047,7 @@
         ${!isStudy ? `
           <select id="assignment-status-select" style="background:var(--bg-surface-inset); border:1.5px solid var(--border-base); color:var(--accent-cyan); font-family:var(--font-mono); font-size:11px; padding:6px 10px; border-radius:4px; outline:none; cursor:pointer;">
             <option value="active" ${appState.assignmentStatusFilter === 'active' ? 'selected' : ''}>⚡ Active Due (${activeCount})</option>
+            <option value="submitted" ${appState.assignmentStatusFilter === 'submitted' ? 'selected' : ''}>✓ Submitted (${submittedCount})</option>
             <option value="all" ${appState.assignmentStatusFilter === 'all' ? 'selected' : ''}>📂 All Records (${totalCount})</option>
             <option value="overdue" ${appState.assignmentStatusFilter === 'overdue' ? 'selected' : ''}>🔒 Submission Closed (${overdueCount})</option>
           </select>
@@ -1181,10 +1184,13 @@
             </div>
           `;
         } else {
-          // Assignment: Active vs Overdue state
+          // Assignment: Active vs Overdue vs Submitted state
           let badgeClass = 'warning';
           let badgeText = `⚡ DUE: ${item.dueDate || 'Immediate'}`;
-          if (item.isOverdue) {
+          if (item.isSubmitted) {
+            badgeClass = 'safe';
+            badgeText = `✓ ${item.uploadStatus === 'Approved' ? 'EVALUATED' : item.uploadStatus === 'Rejected' ? 'REJECTED' : 'SUBMITTED (PENDING)'}`;
+          } else if (item.isOverdue) {
             badgeClass = 'danger';
             badgeText = 'DEADLINE PASSED';
           }
@@ -1201,6 +1207,7 @@
                 <div><strong>FACULTY:</strong> ${item.faculty}</div>
                 <div><strong>GIVEN:</strong> ${item.givenDate || 'N/A'} &nbsp;|&nbsp; <strong>DEADLINE:</strong> ${item.dueDate || 'Immediate'}</div>
                 <div><strong>MAX MARKS:</strong> ${item.maxMarks} &nbsp;|&nbsp; <strong>OBTAINED:</strong> ${item.obtainedMarks}</div>
+                ${item.isSubmitted ? `<div><strong>STATUS:</strong> <span style="color:var(--accent-emerald, #10b981); font-weight:bold;">${item.uploadStatus}</span> &nbsp;|&nbsp; <strong>SUBMITTED:</strong> <span style="color:var(--accent-emerald, #10b981);">${item.uploadDate ? item.uploadDate.split('-')[0] : 'YES'}</span></div>` : ''}
                 ${item.keywords ? `<div><strong>TOPICS:</strong> <span style="color:var(--accent-purple)">${item.keywords}</span></div>` : ''}
                 ${item.references && item.references.startsWith('http') ? `
                   <div style="margin-top:4px;">
@@ -1213,7 +1220,11 @@
               <button class="retro-btn retro-btn-cyan retro-btn-sm btn-download-spec" data-id="${item.assignmentDetailId}" data-title="${item.title}" data-ext="${item.extension}">
                 ⬇ DOWNLOAD SPEC
               </button>
-              ${item.isOverdue ? `
+              ${item.isSubmitted ? `
+                <button class="retro-btn retro-btn-sm" disabled style="opacity:0.95; cursor:default; border-color:var(--accent-emerald, #10b981); color:var(--accent-emerald, #10b981); background:rgba(16, 185, 129, 0.15);" title="Assignment answer submitted successfully.">
+                  ✓ SUBMITTED
+                </button>
+              ` : item.isOverdue ? `
                 <button class="retro-btn retro-btn-ghost retro-btn-sm" disabled style="opacity:0.45; cursor:not-allowed; border-color:var(--accent-rose); color:var(--accent-rose);" title="Submission deadline has passed. Uploads are closed.">
                   🔒 SUBMISSION CLOSED
                 </button>
@@ -1231,8 +1242,8 @@
           downloadAssignmentFile(item.assignmentDetailId, item.title, item.extension, item.assignId);
         });
 
-        // Wire submit action if active
-        if (!isStudy && !item.isOverdue) {
+        // Wire submit action if active and unsubmitted
+        if (!isStudy && !item.isOverdue && !item.isSubmitted) {
           const submitBtn = card.querySelector('.btn-open-submit');
           if (submitBtn) {
             submitBtn.addEventListener('click', () => {
@@ -1694,7 +1705,7 @@
           detailId: assignment.assignmentDetailId,
           fileName: fileName,
           fileExt: fileExt,
-          regId: assignment.regId,
+          regId: assignment.regId || appState.regId || '',
           base64Data: base64Data
         }, (res) => {
           if (res && res.success) {
